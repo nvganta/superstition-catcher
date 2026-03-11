@@ -1,26 +1,235 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap');
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-cream: #FDF6E3;
+  --color-ink: #1A1A2E;
+  --color-amber: #E8A838;
+  --color-amber-dark: #C4872A;
+  --color-coral: #E85D4A;
+  --color-coral-dark: #C44A3A;
+  --color-teal: #2EC4B6;
+  --color-teal-dark: #249E92;
+  --color-navy: #16213E;
+  --color-slate-blue: #3D5A80;
+  --color-dusty-rose: #E8B4B8;
+  --color-sage: #A8C686;
+  --color-lavender: #B4A7D6;
+  --color-paper: #FAF3E0;
+  --color-stamp-red: #C0392B;
+  --color-stamp-green: #27AE60;
+  --color-stamp-blue: #2980B9;
+  --color-evidence-yellow: #F9E547;
+
+  --font-display: 'Archivo Black', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #FDF6E3;
+  --foreground: #1A1A2E;
+}
+
+/* Noise texture overlay */
+.noise-bg {
+  position: relative;
+}
+.noise-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+}
+
+/* Case file stamp effect */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 3px solid currentColor;
+  border-radius: 4px;
+  padding: 4px 12px;
+  transform: rotate(-3deg);
+  opacity: 0.9;
+  position: relative;
+}
+
+.stamp::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  opacity: 0.4;
+}
+
+/* Evidence tag */
+.evidence-tag {
+  background: var(--color-evidence-yellow);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  clip-path: polygon(0 0, 100% 0, 95% 50%, 100% 100%, 0 100%, 5% 50%);
+}
+
+/* Paper texture card */
+.paper-card {
+  background: var(--color-paper);
+  border: 1px solid rgba(26, 26, 46, 0.1);
+  box-shadow:
+    2px 2px 0px rgba(26, 26, 46, 0.08),
+    4px 4px 0px rgba(26, 26, 46, 0.04);
+  position: relative;
+}
+
+.paper-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 8px 8px 0 0;
+}
+
+/* Pin/thumbtack effect */
+.pinned::before {
+  content: '📌';
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  font-size: 1.2rem;
+  z-index: 10;
+  filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.3));
+}
+
+/* Typewriter text effect */
+.typewriter {
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+  line-height: 1.8;
+}
+
+/* Dossier border */
+.dossier-border {
+  border: 2px solid var(--color-ink);
+  position: relative;
+}
+
+.dossier-border::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -4px;
+  bottom: -4px;
+  border: 1px dashed rgba(26, 26, 46, 0.2);
+  pointer-events: none;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-slate-blue);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-navy);
+}
+
+/* Verdict stamp animations */
+@keyframes stampSlam {
+  0% { transform: scale(2.5) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(0.9) rotate(-3deg); opacity: 1; }
+  80% { transform: scale(1.05) rotate(-2deg); }
+  100% { transform: scale(1) rotate(-3deg); }
+}
+
+.stamp-animate {
+  animation: stampSlam 0.4s ease-out forwards;
+}
+
+/* Region card patterns */
+.pattern-dots {
+  background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.pattern-lines {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 8px,
+    currentColor 8px,
+    currentColor 9px
+  );
+}
+
+.pattern-cross {
+  background-image:
+    linear-gradient(currentColor 1px, transparent 1px),
+    linear-gradient(90deg, currentColor 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.pattern-zigzag {
+  background-image: linear-gradient(135deg, currentColor 25%, transparent 25%),
+    linear-gradient(225deg, currentColor 25%, transparent 25%),
+    linear-gradient(315deg, currentColor 25%, transparent 25%),
+    linear-gradient(45deg, currentColor 25%, transparent 25%);
+  background-size: 20px 10px;
+  background-position: 0 0, 10px 0, 10px -5px, 0 5px;
+}
+
+/* Hover lift */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    4px 4px 0px rgba(26, 26, 46, 0.12),
+    8px 8px 0px rgba(26, 26, 46, 0.06);
+}
+
+/* Section divider */
+.case-divider {
+  border: none;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-ink) 0px,
+    var(--color-ink) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  opacity: 0.15;
 }
