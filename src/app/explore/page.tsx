@@ -83,7 +83,7 @@ export default function ExplorePage() {
         </h1>
         <p className="text-ink/50 max-w-xl">
           Every culture has its own collection of myths and superstitions.
-          Pick a region to investigate its case files.
+          Pick a region to explore its myths and superstitions.
         </p>
       </div>
 
@@ -125,7 +125,7 @@ export default function ExplorePage() {
                         : 'bg-ink/10 text-ink/50'
                     }`}
                   >
-                    {count} case{count !== 1 ? 's' : ''}
+                    {count} myth{count !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <h3 className="font-display text-xl text-ink mb-1">
@@ -154,7 +154,7 @@ export default function ExplorePage() {
           <div className="flex items-center gap-3 mb-6">
             <span className="text-xl">{regionEmojis[selectedRegion]}</span>
             <h2 className="font-display text-lg text-ink tracking-tight">
-              {regionLabels[selectedRegion].toUpperCase()} CASES
+              {regionLabels[selectedRegion].toUpperCase()} MYTHS
             </h2>
             <div className="flex-grow h-px bg-ink/10" />
             <span className="text-sm text-ink/40 font-mono">
@@ -174,7 +174,7 @@ export default function ExplorePage() {
         <div className="text-center py-12">
           <div className="text-4xl mb-3">👆</div>
           <p className="text-ink/40 font-medium">
-            Select a region above to view its case files
+            Select a region above to explore its myths
           </p>
         </div>
       )}

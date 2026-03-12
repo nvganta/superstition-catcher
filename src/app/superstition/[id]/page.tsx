@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { getSuperstitionById, categoryLabels, superstitions } from '@/data/superstitions';
 import VerdictBadge from '@/components/VerdictBadge';
 import SuperstitionCard from '@/components/SuperstitionCard';
+import Reactions from '@/components/Reactions';
+import Comments from '@/components/Comments';
 
 export default function SuperstitionDetailPage() {
   const params = useParams();
@@ -125,6 +127,22 @@ export default function SuperstitionDetailPage() {
           </p>
         </section>
 
+        {/* The Modern Twist */}
+        <section className="paper-card rounded-xl p-6 sm:p-8 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-coral" />
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-8 h-8 rounded-full bg-coral/15 flex items-center justify-center text-sm">
+              📱
+            </span>
+            <h2 className="font-display text-base tracking-tight text-ink">
+              THE MODERN TWIST
+            </h2>
+          </div>
+          <p className="text-ink/70 leading-relaxed text-base sm:text-lg pl-11">
+            {s.modernTwist}
+          </p>
+        </section>
+
         {/* Verdict */}
         <section className="paper-card rounded-xl p-6 sm:p-8 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-coral via-amber to-teal" />
@@ -167,6 +185,25 @@ export default function SuperstitionDetailPage() {
         )}
       </div>
 
+      {/* Reactions */}
+      <section className="mt-10">
+        <hr className="case-divider mb-8" />
+        <div className="flex items-center gap-3 mb-5">
+          <span className="text-xl">⚡</span>
+          <h2 className="font-display text-base tracking-tight text-ink">
+            YOUR VERDICT
+          </h2>
+          <div className="flex-grow h-px bg-ink/10" />
+        </div>
+        <Reactions superstitionId={s.id} />
+      </section>
+
+      {/* Comments */}
+      <section className="mt-10">
+        <hr className="case-divider mb-8" />
+        <Comments superstitionId={s.id} />
+      </section>
+
       {/* Related Cases */}
       {related.length > 0 && (
         <section className="mt-16">
@@ -174,7 +211,7 @@ export default function SuperstitionDetailPage() {
           <div className="flex items-center gap-3 mb-6">
             <span className="text-xl">🔗</span>
             <h2 className="font-display text-lg text-ink tracking-tight">
-              RELATED CASES
+              RELATED MYTHS
             </h2>
             <div className="flex-grow h-px bg-ink/10" />
           </div>
@@ -192,7 +229,7 @@ export default function SuperstitionDetailPage() {
           href="/"
           className="inline-flex items-center gap-2 text-sm font-medium text-ink/40 hover:text-ink transition-colors"
         >
-          ← Back to all cases
+          ← Back to all myths
         </Link>
       </div>
     </div>

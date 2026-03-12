@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import SubmitMyth from '@/components/SubmitMyth';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
-  title: 'Superstition Catcher — Busting Myths From Around the World',
+  title: 'Superstition Buster — Busting Myths From Around the World',
   description:
     'Discover the real reasons behind superstitions from India, Japan, China, and beyond. Every myth investigated, every origin uncovered.',
 };
@@ -24,7 +26,7 @@ export default function RootLayout({
               <div className="flex items-center gap-2">
                 <span className="text-xl">🔎</span>
                 <span className="font-display text-sm text-ink/40">
-                  SUPERSTITION CATCHER
+                  SUPERSTITION BUSTER
                 </span>
               </div>
               <p className="text-sm text-ink/30 text-center">
@@ -34,6 +36,8 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
+        <SubmitMyth />
+        <Analytics />
       </body>
     </html>
   );

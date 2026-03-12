@@ -26,13 +26,13 @@ export default function Navbar() {
                 SUPERSTITION
               </span>
               <span className="font-display text-[0.6rem] sm:text-xs text-coral tracking-[0.2em] leading-none">
-                CATCHER
+                BUSTER
               </span>
             </div>
           </Link>
 
           {/* Nav Links */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {links.map((link) => {
               const isActive =
                 link.href === '/'
@@ -42,14 +42,15 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-2 sm:px-3 rounded-lg text-sm font-medium transition-all ${
                     isActive
                       ? 'bg-ink text-cream'
                       : 'text-ink/60 hover:text-ink hover:bg-ink/5'
                   }`}
+                  title={link.label}
                 >
-                  <span className="text-base hidden sm:inline">{link.icon}</span>
-                  <span>{link.label}</span>
+                  <span className="text-base">{link.icon}</span>
+                  <span className="hidden sm:inline">{link.label}</span>
                 </Link>
               );
             })}

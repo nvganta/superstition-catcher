@@ -92,7 +92,7 @@ export default function HomePage() {
         <div className="flex items-center gap-3 mb-6">
           <span className="text-xl">🗂️</span>
           <h2 className="font-display text-lg text-ink tracking-tight">
-            ALL CASES
+            ALL MYTHS
           </h2>
           <div className="flex-grow h-px bg-ink/10" />
         </div>
@@ -127,7 +127,7 @@ export default function HomePage() {
           <div className="text-center py-16">
             <div className="text-4xl mb-3">📭</div>
             <p className="font-display text-ink/40">
-              No cases found for this region yet.
+              No myths found for this region yet.
             </p>
           </div>
         )}

@@ -71,7 +71,7 @@ export default function SearchBar() {
         <div className="absolute top-full mt-2 w-full bg-paper border-2 border-ink/10 rounded-xl shadow-lg overflow-hidden z-50">
           <div className="p-2 border-b border-ink/5">
             <span className="text-xs font-mono text-ink/40 px-2">
-              {results.length} case{results.length !== 1 ? 's' : ''} found
+              {results.length} myth{results.length !== 1 ? 's' : ''} found
             </span>
           </div>
           {results.map((s) => (
@@ -100,7 +100,7 @@ export default function SearchBar() {
       {isOpen && query.length >= 2 && results.length === 0 && (
         <div className="absolute top-full mt-2 w-full bg-paper border-2 border-ink/10 rounded-xl shadow-lg p-6 text-center z-50">
           <div className="text-2xl mb-2">🔍</div>
-          <div className="font-semibold text-ink/60 text-sm">No cases found</div>
+          <div className="font-semibold text-ink/60 text-sm">No myths found</div>
           <div className="text-xs text-ink/40 mt-1">
             Try searching for a country, animal, or keyword
           </div>

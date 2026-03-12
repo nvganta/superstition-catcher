@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: "/Users/navee/Documents/other projects/superstition catcher",
-  },
+  ...(process.env.NODE_ENV === "development" && {
+    turbopack: {
+      root: "/Users/navee/Documents/other projects/superstition catcher",
+    },
+  }),
 };
 
 export default nextConfig;

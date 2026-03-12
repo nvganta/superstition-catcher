@@ -90,7 +90,7 @@ export default function CategoriesPage() {
                         : 'bg-ink/10 text-ink/50'
                     }`}
                   >
-                    {count} case{count !== 1 ? 's' : ''}
+                    {count} myth{count !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <h3 className="font-display text-lg text-ink mb-1">
@@ -112,7 +112,7 @@ export default function CategoriesPage() {
           <div className="flex items-center gap-3 mb-6">
             <span className="text-xl">{categoryEmojis[selectedCategory]}</span>
             <h2 className="font-display text-lg text-ink tracking-tight">
-              {categoryLabels[selectedCategory].toUpperCase()} CASES
+              {categoryLabels[selectedCategory].toUpperCase()} MYTHS
             </h2>
             <div className="flex-grow h-px bg-ink/10" />
             <span className="text-sm text-ink/40 font-mono">
@@ -132,7 +132,7 @@ export default function CategoriesPage() {
         <div className="text-center py-12">
           <div className="text-4xl mb-3">👆</div>
           <p className="text-ink/40 font-medium">
-            Pick a category to see its case files
+            Pick a category to explore its myths
           </p>
         </div>
       )}
