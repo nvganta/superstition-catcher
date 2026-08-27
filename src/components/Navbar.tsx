@@ -7,6 +7,7 @@ const links = [
   { href: '/', label: 'Home', icon: '🏠' },
   { href: '/explore', label: 'Explore', icon: '🗺️' },
   { href: '/categories', label: 'Categories', icon: '📂' },
+  { href: '/chains', label: 'Chains', icon: '⛓️' },
 ];
 
 export default function Navbar() {

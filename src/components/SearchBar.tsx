@@ -7,24 +7,31 @@ import VerdictBadge from './VerdictBadge';
 
 export default function SearchBar() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Superstition[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
+  // Whether the user has actively closed the dropdown for the current query.
+  // Typing again reopens it.
+  const [dismissed, setDismissed] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (query.length >= 2) {
-      setResults(searchSuperstitions(query).slice(0, 6));
-      setIsOpen(true);
-    } else {
-      setResults([]);
-      setIsOpen(false);
-    }
-  }, [query]);
+  // Results are derived from the query, not stored. Searching a static array
+  // during render is cheaper than the extra render pass an effect would cost.
+  const results: Superstition[] =
+    query.length >= 2 ? searchSuperstitions(query).slice(0, 6) : [];
+  const isOpen = query.length >= 2 && !dismissed;
+
+  function updateQuery(next: string) {
+    setQuery(next);
+    setDismissed(false);
+  }
+
+  function close() {
+    setQuery('');
+    setDismissed(true);
+  }
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+        setDismissed(true);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -50,16 +57,13 @@ export default function SearchBar() {
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => updateQuery(e.target.value)}
           placeholder="Search superstitions... e.g. &quot;black cat&quot;, &quot;mirror&quot;, &quot;Japan&quot;"
           className="w-full pl-12 pr-4 py-3.5 bg-paper border-2 border-ink/10 rounded-xl font-body text-ink placeholder:text-ink/30 focus:outline-none focus:border-amber focus:ring-2 focus:ring-amber/20 transition-all"
         />
         {query && (
           <button
-            onClick={() => {
-              setQuery('');
-              setIsOpen(false);
-            }}
+            onClick={close}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-ink/30 hover:text-ink/60 transition-colors"
           >
             ✕
@@ -78,10 +82,7 @@ export default function SearchBar() {
             <Link
               key={s.id}
               href={`/superstition/${s.id}`}
-              onClick={() => {
-                setIsOpen(false);
-                setQuery('');
-              }}
+              onClick={close}
               className="flex items-center gap-3 px-4 py-3 hover:bg-amber/10 transition-colors border-b border-ink/5 last:border-b-0"
             >
               <span className="text-lg shrink-0">{s.countryFlag}</span>
