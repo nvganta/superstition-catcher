@@ -47,3 +47,14 @@ draft carries a confidence rating and an uncertainty note, and a human loads it
 into the editor and verifies it before it becomes a case file.
 
 See LOG.md for founder status.
+
+<!-- repository-guide:start -->
+## Repository guide
+
+- [Agent instructions](AGENTS.md)
+- [Founder mission](FOUNDER.md)
+- [Current status and session history](LOG.md)
+- [Architecture](ARCHITECTURE.md)
+- [Roadmap](ROADMAP.md)
+- [Setup and verification](DEVELOPMENT.md)
+<!-- repository-guide:end -->

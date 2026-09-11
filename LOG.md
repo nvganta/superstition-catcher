@@ -5,10 +5,11 @@ any working session. Newest entries at the top.
 
 ## Status
 
-- State: active, revived 2026-08-27
+- State: active
+- Local URL: running on `http://localhost:3000` (Next.js 16.3.3 Turbopack)
 - Live URL: unknown, verify whether the last deploy is still up
 - Stranger test: unknown, the product was near polish stage when it stopped
-- Currently working on: The Broken Chain and AI origin research, committed to branch `broken-chain`. Typecheck, lint, and `next build` all pass; dependency advisories at zero. Nothing exercised against a live database or a live Anthropic key.
+- Currently working on: The Broken Chain and AI origin research, on branch `broken-chain`. Fixed next.config.ts turbopack root (removed hardcoded Mac path); local server tested and answering 200 OK. Typecheck, lint, and `next build` all pass; dependency advisories at zero.
 - Blocked on investor: (1) an `ANTHROPIC_API_KEY` in the deploy environment, the origin-research button 503s without one and nothing else breaks; (2) authorize the Vercel connector so I can find the live URL and check whether the last deploy is still up, it refused in a non-interactive session; (3) merge `broken-chain` when you want it live
 
 ## Decisions
@@ -28,13 +29,20 @@ any working session. Newest entries at the top.
 
 ## Session notes
 
+- 2026-09-10: Prepared a draft PR from an isolated working tree. Repository handoff and staged-diff checks pass in the isolated PR tree. This documentation PR does not claim a new application runtime acceptance test.
+
+
+- 2026-09-10: Added repository orientation, agent handoff, setup/check instructions and a documentation CI baseline. Existing implementation and historical evidence remain in place; the repository handoff check and git diff --check passed. Runtime acceptance was not rerun unless a separate entry below explicitly records it. See DEVELOPMENT.md for verification gaps.
+
 - 2026-08-27 (build): Investor approved the revive and added a second ask: use AI to find out why a submitted superstition has been that way. Both built.
   The Broken Chain: `src/data/brokenChain.ts` (Stance enum, labels, colors, per-stance interview prompts, tally helpers, shared field limits), `/api/chain` (GET approved stories + tally, POST upsert), `/api/chain/pending` and `/api/chain/[id]` (admin queue, PATCH approve / DELETE reject), `/api/chain/tallies` (one aggregation for the whole board), `src/components/BrokenChain.tsx` (stance bar, stance-gated form, story list), wired into the case-file page between reactions and comments. New `/chains` board sorts the catalog by fading / changing / holding / most answered, linked in the navbar.
   Origin research: `/api/explain` calls `claude-opus-5` via the Anthropic SDK with a Zod structured output (`messages.parse` + `zodOutputFormat`). Returns a full case-file draft plus `confidence` and a required `uncertaintyNote`. Admin panel gained an "Investigate origin" button per submission and a DraftPanel that shows the caveat above the prose, with "Open in editor" loading it into the existing superstition form unsaved.
   The prompt's house rules exist for specific failure modes: don't invent history, and specifically don't invent a practical/sanitation rationale for beliefs that are purely symbolic, which is the exact pattern this catalog would over-teach a model. Also never sneer, and stay careful around caste, gender, menstruation, and death rites.
   Verified: `tsc --noEmit`, `eslint` (new files clean; 3 pre-existing errors remain in `src/app/page.tsx` and `SearchBar.tsx`), `next build`. NOT verified: no MONGODB_URI and no ANTHROPIC_API_KEY in this environment, so no request has been run end to end. First deploy needs a manual pass: post a chain entry, approve it, run one origin draft.
   Open question for the investor: whether origin drafts eventually show to the submitter instead of only the admin. Worth revisiting after ~20 drafts, when we know the real hallucination rate.
+
 - 2026-08-27: Investor proposed a generational tradition-breaking angle: families who abandoned or altered a practice once the original reason stopped making sense. I scoped it as "The Broken Chain", a first-person testimony layer sitting alongside the authored `modernTwist` field. Shape: one short entry per person per superstition, tagged with one of four stances (still do it / stopped / changed how we do it / never knew why until today). The stance enum is the load-bearing part, it turns free text into a per-superstition aggregate bar and unlocks a "Broken Chains" browse view sorted by which traditions are fading fastest. Implementation reuses the /api/comments pattern (superstitionId key, visitorId identity) plus a new collection. Estimated a day.
   Two design positions I took: feature "we changed how we do it" over "stopped", because traditions mutate more often than they die and a stopped-count scoreboard would turn the site into mockery, which violates the core tone rule; and route entries through the existing admin approval queue rather than posting live, since these touch death rituals, menstruation taboos, and caste-adjacent practices.
   Not built. Awaiting the revive decision and the moderation call.
+
 - 2026-08-25: Repo joined the Compass portfolio. LOG stamped and README rewritten by the investor's setup pass.
