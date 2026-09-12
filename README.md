@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Superstition Catcher
 
-## Getting Started
+A browsable catalog of superstitions, organized by region and category, with
+search, a "superstition of the day," community submissions, and The Broken
+Chain: first-person accounts of what happened to a belief inside a real family.
 
-First, run the development server:
+## State
+
+Revived 2026-08-27 after dormancy since 2026-03-12.
+
+Catalog copy lives in a static in-repo store (`src/data/superstitions.ts`, 42
+entries across 7 regions). Everything readers write (comments, reactions,
+submissions, chain entries) lives in MongoDB.
+
+## Stack
+
+Next.js App Router, TypeScript, Tailwind, MongoDB, Anthropic SDK.
+
+## Running
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Required for | Notes |
+| --- | --- | --- |
+| `MONGODB_URI` | Comments, reactions, submissions, chain entries | Database `superstition-buster` |
+| `ADMIN_PASSWORD` | `/admin`, moderation, AI drafts | Sent as the `x-admin-password` header |
+| `ANTHROPIC_API_KEY` | `POST /api/explain` | Optional; without it the origin research button returns 503 and nothing else breaks |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## The Broken Chain
 
-## Learn More
+Each superstition page collects one entry per visitor, tagged with a stance:
+still do it, changed how we do it, stopped, or never knew why. The stance
+counts toward the public bar immediately; the written story is held for admin
+approval first, because these get personal. `/chains` ranks the catalog by
+which traditions are fading, mutating, or holding on.
 
-To learn more about Next.js, take a look at the following resources:
+## Origin research
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`POST /api/explain` drafts case-file sections from a raw submission using
+Claude. It is admin-gated and its output is never published directly: every
+draft carries a confidence rating and an uncertainty note, and a human loads it
+into the editor and verifies it before it becomes a case file.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See LOG.md for founder status.

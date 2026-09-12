@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { superstitions } from '@/data/superstitions';
+import { isAdminPassword } from '@/lib/admin-auth';
 
 // POST seed database with static data
 export async function POST(request: NextRequest) {
   try {
     const adminPassword = request.headers.get('x-admin-password');
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
+    if (!isAdminPassword(adminPassword)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

@@ -6,6 +6,7 @@ import { getSuperstitionById, categoryLabels, superstitions } from '@/data/super
 import VerdictBadge from '@/components/VerdictBadge';
 import SuperstitionCard from '@/components/SuperstitionCard';
 import Reactions from '@/components/Reactions';
+import BrokenChain from '@/components/BrokenChain';
 import Comments from '@/components/Comments';
 
 export default function SuperstitionDetailPage() {
@@ -196,6 +197,12 @@ export default function SuperstitionDetailPage() {
           <div className="flex-grow h-px bg-ink/10" />
         </div>
         <Reactions superstitionId={s.id} />
+      </section>
+
+      {/* Broken Chain */}
+      <section className="mt-10">
+        <hr className="case-divider mb-8" />
+        <BrokenChain superstitionId={s.id} />
       </section>
 
       {/* Comments */}

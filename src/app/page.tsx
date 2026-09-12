@@ -1,20 +1,31 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useSyncExternalStore } from 'react';
 import { superstitions, regionLabels, type Region } from '@/data/superstitions';
 import SuperstitionCard from '@/components/SuperstitionCard';
 import SearchBar from '@/components/SearchBar';
 
+// The daily pick depends on today's date, which the server and the browser do
+// not agree on: this page is prerendered, so its HTML would otherwise freeze
+// whichever superstition was current on the day we built, and mismatch the
+// client from the next morning onward. useSyncExternalStore is the sanctioned
+// way to say "server renders this, client renders that" without React
+// screaming about hydration. A primitive index keeps the snapshot stable.
+const subscribeToNothing = () => () => {};
+
+function todaysIndex() {
+  const now = new Date();
+  const dayOfYear = Math.floor(
+    (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000
+  );
+  return dayOfYear % superstitions.length;
+}
+
 export default function HomePage() {
   const [activeRegion, setActiveRegion] = useState<Region | 'all'>('all');
 
-  // Pick a "superstition of the day" based on the date
-  const dailySuperstition = useMemo(() => {
-    const dayOfYear = Math.floor(
-      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
-    );
-    return superstitions[dayOfYear % superstitions.length];
-  }, []);
+  const dailyIndex = useSyncExternalStore(subscribeToNothing, todaysIndex, () => 0);
+  const dailySuperstition = superstitions[dailyIndex];
 
   const filtered = useMemo(() => {
     const list =

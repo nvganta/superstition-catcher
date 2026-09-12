@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
+import { isAdminPassword } from '@/lib/admin-auth';
 
 // GET single superstition by id
 export async function GET(
@@ -29,7 +30,7 @@ export async function PUT(
 ) {
   try {
     const adminPassword = request.headers.get('x-admin-password');
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
+    if (!isAdminPassword(adminPassword)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -60,7 +61,7 @@ export async function DELETE(
 ) {
   try {
     const adminPassword = request.headers.get('x-admin-password');
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
+    if (!isAdminPassword(adminPassword)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

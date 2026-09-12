@@ -8,6 +8,21 @@ import {
   type Category,
   type Verdict,
 } from '@/data/superstitions';
+import { stanceEmojis, stanceLabels, type ChainEntry } from '@/data/brokenChain';
+
+// Shape returned by /api/explain. Mirrors the Zod schema on that route.
+interface OriginDraft {
+  title: string;
+  whatPeopleBelieve: string;
+  historicalOrigin: string;
+  theRealReason: string;
+  modernTwist: string;
+  suggestedVerdict: Verdict;
+  suggestedRegion: Region;
+  suggestedCategory: Category;
+  confidence: 'high' | 'medium' | 'low';
+  uncertaintyNote: string;
+}
 
 interface SuperstitionDoc {
   id: string;
@@ -49,7 +64,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [message, setMessage] = useState('');
-  const [tab, setTab] = useState<'superstitions' | 'submissions'>('superstitions');
+  const [tab, setTab] = useState<'superstitions' | 'submissions' | 'chain'>('superstitions');
   const [submissions, setSubmissions] = useState<Array<{
     _id: string;
     name: string;
@@ -58,6 +73,11 @@ export default function AdminPage() {
     status: string;
     createdAt: string;
   }>>([]);
+  const [pendingChain, setPendingChain] = useState<ChainEntry[]>([]);
+  // AI drafts, keyed by submission id. Held in memory only: a draft is a
+  // starting point for a human, not a record.
+  const [drafts, setDrafts] = useState<Record<string, OriginDraft>>({});
+  const [drafting, setDrafting] = useState<string | null>(null);
 
   const fetchSuperstitions = useCallback(async () => {
     try {
@@ -85,12 +105,101 @@ export default function AdminPage() {
     }
   }, [password]);
 
+  const fetchPendingChain = useCallback(async () => {
+    try {
+      const res = await fetch('/api/chain/pending', {
+        headers: { 'x-admin-password': password },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPendingChain(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch pending chain entries:', err);
+    }
+  }, [password]);
+
   useEffect(() => {
     if (authenticated) {
       fetchSuperstitions();
       fetchSubmissions();
+      fetchPendingChain();
     }
-  }, [authenticated, fetchSuperstitions, fetchSubmissions]);
+  }, [authenticated, fetchSuperstitions, fetchSubmissions, fetchPendingChain]);
+
+  async function moderateChainEntry(id: string, action: 'approve' | 'reject') {
+    try {
+      const res = await fetch(`/api/chain/${id}`, {
+        method: action === 'approve' ? 'PATCH' : 'DELETE',
+        headers: { 'x-admin-password': password },
+      });
+      if (res.ok) {
+        setPendingChain((prev) => prev.filter((e) => e._id !== id));
+        setMessage(action === 'approve' ? 'Story published' : 'Story rejected');
+      } else {
+        setMessage('Moderation failed');
+      }
+    } catch {
+      setMessage('Moderation failed');
+    }
+  }
+
+  // Ask the research assistant to draft a case file from a raw submission.
+  // The result is a starting point for the editor, never published as-is.
+  async function investigate(submissionId: string, myth: string, country: string) {
+    setDrafting(submissionId);
+    setMessage('');
+    try {
+      const res = await fetch('/api/explain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': password,
+        },
+        body: JSON.stringify({ myth, country }),
+      });
+      const data = await res.json();
+      if (res.ok && data.draft) {
+        setDrafts((prev) => ({ ...prev, [submissionId]: data.draft }));
+      } else {
+        setMessage(data.error || 'The research assistant failed');
+      }
+    } catch {
+      setMessage('The research assistant failed');
+    } finally {
+      setDrafting(null);
+    }
+  }
+
+  // Load a draft into the superstition editor. Everything stays editable and
+  // nothing is saved until the human hits save.
+  function loadDraftIntoEditor(submissionId: string, country: string) {
+    const draft = drafts[submissionId];
+    if (!draft) return;
+    setEditing({
+      ...emptySuperstition,
+      id: draft.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .slice(0, 60),
+      title: draft.title,
+      country: country || '',
+      countryFlag: '',
+      region: draft.suggestedRegion,
+      category: draft.suggestedCategory,
+      whatPeopleBelieve: draft.whatPeopleBelieve,
+      historicalOrigin: draft.historicalOrigin,
+      theRealReason: draft.theRealReason,
+      modernTwist: draft.modernTwist,
+      verdict: draft.suggestedVerdict,
+      funFact: '',
+    });
+    setIsNew(true);
+    setTab('superstitions');
+    setMessage('Draft loaded. Check every claim before saving.');
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -418,6 +527,16 @@ export default function AdminPage() {
         >
           Submissions ({submissions.length})
         </button>
+        <button
+          onClick={() => { setTab('chain'); fetchPendingChain(); }}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === 'chain'
+              ? 'bg-cream text-ink shadow-sm'
+              : 'text-ink/40 hover:text-ink/60'
+          }`}
+        >
+          Chain queue ({pendingChain.length})
+        </button>
       </div>
 
       {message && (
@@ -426,7 +545,66 @@ export default function AdminPage() {
         </div>
       )}
 
-      {tab === 'submissions' ? (
+      {tab === 'chain' ? (
+        <div>
+          {pendingChain.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="text-4xl mb-3">⛓️</div>
+              <p className="text-ink/40 font-medium">
+                Queue is clear. Stances already count in the public bar; only these
+                stories wait on you.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pendingChain.map((entry) => (
+                <div key={entry._id} className="paper-card rounded-lg p-5">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm">{stanceEmojis[entry.stance]}</span>
+                      <span className="text-[11px] font-semibold text-ink/60 uppercase tracking-wide">
+                        {stanceLabels[entry.stance]}
+                      </span>
+                      <span className="text-ink/15">·</span>
+                      <span className="text-xs font-mono text-ink/30">
+                        {entry.superstitionId}
+                      </span>
+                    </div>
+                    <span className="text-xs text-ink/30 shrink-0">
+                      {new Date(entry.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  {entry.whoDidIt && (
+                    <p className="text-xs text-ink/40 italic mb-1.5">{entry.whoDidIt}</p>
+                  )}
+                  <p className="text-sm text-ink/70 leading-relaxed mb-3">
+                    {entry.whatChanged}
+                  </p>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-ink/30">— {entry.name}</span>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => moderateChainEntry(entry._id!, 'reject')}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-coral border-2 border-coral/20 hover:bg-coral/10 transition-colors"
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => moderateChainEntry(entry._id!, 'approve')}
+                        className="px-4 py-1.5 bg-ink text-cream rounded-lg text-xs font-semibold hover:bg-navy transition-colors"
+                      >
+                        Publish
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : tab === 'submissions' ? (
         <div>
           {submissions.length === 0 ? (
             <div className="text-center py-20">
@@ -454,6 +632,30 @@ export default function AdminPage() {
                     </span>
                   </div>
                   <p className="text-sm text-ink/70 leading-relaxed pl-9">{s.myth}</p>
+
+                  <div className="pl-9 mt-3">
+                    {!drafts[s._id] ? (
+                      <button
+                        onClick={() => investigate(s._id, s.myth, s.country)}
+                        disabled={drafting === s._id}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-ink border-2 border-ink/10 hover:border-amber transition-colors disabled:opacity-40"
+                      >
+                        {drafting === s._id ? 'Investigating...' : '🔍 Investigate origin'}
+                      </button>
+                    ) : (
+                      <DraftPanel
+                        draft={drafts[s._id]}
+                        onUse={() => loadDraftIntoEditor(s._id, s.country)}
+                        onDiscard={() =>
+                          setDrafts((prev) => {
+                            const next = { ...prev };
+                            delete next[s._id];
+                            return next;
+                          })
+                        }
+                      />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -512,6 +714,87 @@ export default function AdminPage() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// An AI draft, shown with its own uncertainty front and centre. The confidence
+// badge and the note sit ABOVE the prose on purpose: read the caveat first,
+// then the seductive-sounding paragraphs.
+function DraftPanel({
+  draft,
+  onUse,
+  onDiscard,
+}: {
+  draft: OriginDraft;
+  onUse: () => void;
+  onDiscard: () => void;
+}) {
+  const confidenceStyle = {
+    high: 'bg-teal/15 text-teal',
+    medium: 'bg-amber/15 text-amber-dark',
+    low: 'bg-stamp-red/15 text-stamp-red',
+  }[draft.confidence];
+
+  return (
+    <div className="border-2 border-dashed border-ink/15 rounded-lg p-4 bg-cream">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <span className="evidence-tag">AI Draft</span>
+        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${confidenceStyle}`}>
+          {draft.confidence} confidence
+        </span>
+        <span className="text-xs text-ink/30">unverified</span>
+      </div>
+
+      <div className="bg-evidence-yellow/20 border-2 border-evidence-yellow/40 rounded-lg p-3 mb-3">
+        <div className="text-[10px] font-semibold text-ink/50 uppercase tracking-wider mb-1">
+          Verify before publishing
+        </div>
+        <p className="text-xs text-ink/70 leading-relaxed">{draft.uncertaintyNote}</p>
+      </div>
+
+      <div className="space-y-2.5 mb-3">
+        <DraftField label="Title" value={draft.title} />
+        <DraftField label="What people believe" value={draft.whatPeopleBelieve} />
+        <DraftField label="Historical origin" value={draft.historicalOrigin} />
+        <DraftField label="The real reason" value={draft.theRealReason} />
+        <DraftField label="Modern twist" value={draft.modernTwist} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-[11px] text-ink/40 mb-3">
+        <span>Suggests:</span>
+        <span className="font-medium text-ink/60">{regionLabels[draft.suggestedRegion]}</span>
+        <span>·</span>
+        <span className="font-medium text-ink/60">{categoryLabels[draft.suggestedCategory]}</span>
+        <span>·</span>
+        <span className="font-medium text-ink/60">{draft.suggestedVerdict}</span>
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={onDiscard}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-ink/50 border-2 border-ink/10 hover:border-ink/25 transition-colors"
+        >
+          Discard
+        </button>
+        <button
+          onClick={onUse}
+          className="px-4 py-1.5 bg-ink text-cream rounded-lg text-xs font-semibold hover:bg-navy transition-colors"
+        >
+          Open in editor
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DraftField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] font-semibold text-ink/35 uppercase tracking-wider mb-0.5">
+        {label}
+      </div>
+      <p className="text-xs text-ink/70 leading-relaxed">{value}</p>
     </div>
   );
 }
