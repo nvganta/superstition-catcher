@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
+import { isAdminPassword } from '@/lib/admin-auth';
 
 // Research assistant for a submitted myth: drafts the "why has it been this
 // way" sections so a human doesn't start from a blank page.
@@ -71,7 +72,7 @@ uncertaintyNote is the most important field you write. It is what the human edit
 export async function POST(request: NextRequest) {
   try {
     const adminPassword = request.headers.get('x-admin-password');
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
+    if (!isAdminPassword(adminPassword)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

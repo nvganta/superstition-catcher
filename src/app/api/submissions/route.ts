@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
+import { isAdminPassword } from '@/lib/admin-auth';
 
 // POST — submit a new myth suggestion
 export async function POST(request: NextRequest) {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const adminPassword = request.headers.get('x-admin-password');
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
+    if (!isAdminPassword(adminPassword)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

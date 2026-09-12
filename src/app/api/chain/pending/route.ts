@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
+import { isAdminPassword } from '@/lib/admin-auth';
 
 // GET — admin: the moderation queue for Broken Chain entries.
 export async function GET(request: NextRequest) {
   try {
     const adminPassword = request.headers.get('x-admin-password');
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
+    if (!isAdminPassword(adminPassword)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
