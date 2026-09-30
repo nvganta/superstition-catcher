@@ -1,3 +1,8 @@
+/**
+ * Static seed data for the legacy superstition catalog (42 curated entries).
+ * The MongoDB `entries` collection is the runtime source of truth after Wave 1 migration.
+ * Site read paths still use this file until Wave 2 switches them to the database.
+ */
 export type Verdict = 'busted' | 'hasMerit' | 'practicalOrigin';
 
 export type Region = 'india' | 'japan' | 'china' | 'middleEast' | 'europe' | 'americas' | 'africa';
