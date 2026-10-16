@@ -1,5 +1,5 @@
 /**
- * Static seed data for the legacy superstition catalog (42 curated entries).
+ * Static seed data for the legacy superstition catalog (43 curated entries).
  * The MongoDB `entries` collection is the runtime source of truth after Wave 1 migration.
  * Site read paths still use this file until Wave 2 switches them to the database.
  */
@@ -599,6 +599,25 @@ export const superstitions: Superstition[] = [
     verdict: 'busted',
     funFact:
       'An estimated 700 million grapes are consumed in Spain alone every New Year\'s Eve. Choking on grapes during the countdown is common enough that Spanish emergency rooms prepare for it. The luckiest tradition has its own injury statistics.',
+  },
+  {
+    id: 'pulling-the-sun',
+    title: 'Pulling the Sun (Coup de Soleil)',
+    country: 'USA (Louisiana)',
+    countryFlag: '🇺🇸',
+    region: 'americas',
+    category: 'homeAndDaily',
+    whatPeopleBelieve:
+      'After a long day in the Louisiana heat, the sun can get "stuck" inside you — what Cajun and Creole families call coup de soleil or having the sun in the head. You feel pounding headaches, chills, fever, exhaustion, and sometimes hot, dry skin. In the version most people show today, someone lays a cool damp towel or cloth on your head, turns a glass of water upside down, and balances it on top; bubbles rising in the glass mean the trapped sun is leaving. Older Acadiana traiteurs treat the same sickness with prayer, hands on the head, and cool water — including stories of a cup held over the crown until the water seems to simmer.',
+    historicalOrigin:
+      'In Acadiana and across south Louisiana, traiteurs have long treated sunstroke alongside sprains, warts, and toothaches — blending Catholic prayer with remedies learned from French, Native American, and African healing traditions. Folklorist Barry Jean Ancelet and the Louisiana Folklife Program document traiteurs as a living "shy" tradition passed orally, often from the opposite gender in a family. Before rural doctors were common or affordable, families sought treaters for heat sickness the way they still do today in many bayou communities.',
+    theRealReason:
+      'There is no literal sun trapped in your body — but heat exhaustion and heat stroke are real medical emergencies in Gulf South humidity. The bubbles are physics, not expelled sunlight: a warm scalp heats the glass and the air trapped inside; that air expands and seeps out as bubbles, and warmer water releases dissolved gas more easily too. What actually eases mild heat illness is the cool damp cloth, plus shade, rest, hydration, and calm — the same sensible first aid traiteurs often paired with prayer. Severe heat stroke still needs emergency care, not only a glass balanced on your head.',
+    modernTwist:
+      'Traiteurs still work quietly in Acadiana alongside urgent care and ERs — patients often use both without seeing a conflict. In the 2020s, short-form video revived the phrase "pulling the sun out," sometimes mixing traiteur stories with glass-of-water home cures. Louisiana summers keep the underlying problem very current: extreme heat sends people to the hospital every year while grandparents still know who to call when a kid comes in from the field with a sun headache.',
+    verdict: 'hasMerit',
+    funFact:
+      'Louisiana filmmaker Glen Pitre documented traiteurs in the 1998 documentary Good For What Ails You — the same cultural world where sunstroke treatments with water and prayer show up in family memory and regional magazines decades later.',
   },
 
   // ============ MIDDLE EAST ============
