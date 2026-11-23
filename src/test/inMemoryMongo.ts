@@ -88,6 +88,14 @@ class InMemoryCollection<T extends Document = Document> {
     return spec.name ?? Object.keys(key).join('_');
   }
 
+  async dropIndex(name: string) {
+    const before = this.indexes.length;
+    this.indexes = this.indexes.filter((index) => index.name !== name);
+    if (this.indexes.length === before) {
+      throw Object.assign(new Error(`index not found with name [${name}]`), { code: 27, codeName: 'IndexNotFound' });
+    }
+  }
+
   find(filter: Filter<T> = {}) {
     return {
       toArray: async () => this.match(filter),

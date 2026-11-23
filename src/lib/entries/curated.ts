@@ -1,14 +1,23 @@
 import type { Db } from 'mongodb';
-import { entrySchema } from '@/lib/schema/entry';
+import { entrySchema, type Entry } from '@/lib/schema/entry';
 import {
   isDuplicateKeyError,
   parseEntryDocs,
+  setAndUnset,
   slugify,
   unknownCategorySlugs,
   writeVersionSnapshot,
 } from './documents';
 import { adminEntryCreateSchema, adminEntryUpdateSchema } from './input';
 import { invalid, issuesFrom, type EntryWriteResult } from './results';
+
+/**
+ * Admin edits touch content only. Status and flagCount belong to moderation, so an edit saved
+ * while a flag lands cannot undo it.
+ */
+const EDITABLE_FIELDS = (Object.keys(adminEntryUpdateSchema.shape) as (keyof Entry)[]).filter(
+  (field) => field !== 'version'
+);
 
 export async function createCuratedEntry(
   db: Db,
@@ -30,6 +39,7 @@ export async function createCuratedEntry(
     ...fields,
     id: id ?? slugify(fields.title),
     origin: 'curated',
+    status: 'live',
     flagCount: 0,
     version: 1,
     createdAt: now,
@@ -80,9 +90,12 @@ export async function updateEntry(
     return invalid('categorySlugs', `Unknown category: ${unknown.join(', ')}`);
   }
 
+  const edited = Object.fromEntries(
+    EDITABLE_FIELDS.map((field) => [field, fields[field as keyof typeof fields]])
+  ) as Partial<Entry>;
   const candidate = entrySchema.safeParse({
     ...existing,
-    ...fields,
+    ...edited,
     version: existing.version + 1,
     updatedAt: now,
   });
@@ -91,12 +104,17 @@ export async function updateEntry(
   }
   const entry = candidate.data;
 
-  const result = await entries.replaceOne({ id, version: existing.version }, { ...entry });
-  if (result.matchedCount === 0) {
-    const current = await entries.findOne({ id }, { projection: { version: 1 } });
-    return { kind: 'conflict', currentVersion: (current?.version as number | undefined) ?? existing.version };
+  const saved = await entries.findOneAndUpdate(
+    { id, version: existing.version },
+    setAndUnset({ ...edited, version: entry.version, updatedAt: now }),
+    { returnDocument: 'after' }
+  );
+  const [current] = saved ? parseEntryDocs([saved]) : [];
+  if (!current) {
+    const latest = await entries.findOne({ id }, { projection: { version: 1 } });
+    return { kind: 'conflict', currentVersion: (latest?.version as number | undefined) ?? existing.version };
   }
-  await writeVersionSnapshot(db, entry, now);
+  await writeVersionSnapshot(db, current, now);
 
-  return { kind: 'saved', entry };
+  return { kind: 'saved', entry: current };
 }

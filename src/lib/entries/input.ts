@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { FIELD_LIMITS } from '@/lib/guardrails/limits';
 import {
   confidenceSchema,
-  entryStatusSchema,
   regionSchema,
   sourceKindSchema,
 } from '@/lib/schema/common';
@@ -10,10 +9,10 @@ import {
 const blankToUndefined = (value: unknown) =>
   typeof value === 'string' && value.trim() === '' ? undefined : value;
 
-const requiredText = (max: number) =>
+export const requiredText = (max: number) =>
   z.string().trim().min(1, 'This field is required').max(max, `Keep this under ${max} characters`);
 
-const optionalText = (max: number) =>
+export const optionalText = (max: number) =>
   z.preprocess(
     blankToUndefined,
     z.string().trim().max(max, `Keep this under ${max} characters`).optional()
@@ -47,8 +46,8 @@ const placeFields = {
   region: regionSchema,
   postedBy: optionalText(FIELD_LIMITS.postedBy),
 };
-export const visitorIdSchema = z.string().uuid('Missing visitor id; reload the page and try again');
 
+export const visitorIdSchema = z.string().uuid('Missing visitor id; reload the page and try again');
 
 export const communityEntryInputSchema = z.object({
   visitorId: visitorIdSchema,
@@ -73,7 +72,6 @@ const adminEntryFields = {
   sources: z.array(sourceInputSchema).max(FIELD_LIMITS.maxSources).default([]),
   confidence: z.preprocess(blankToUndefined, confidenceSchema.optional()),
   uncertaintyNote: optionalText(FIELD_LIMITS.uncertaintyNote),
-  status: entryStatusSchema.default('live'),
 };
 
 export const adminEntryCreateSchema = z.object({

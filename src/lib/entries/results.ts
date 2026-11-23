@@ -6,15 +6,19 @@ export interface FieldIssue {
   message: string;
 }
 
-export type EntryWriteResult =
-  | { kind: 'created'; entry: Entry }
-  | { kind: 'saved'; entry: Entry }
-  | { kind: 'invalid'; issues: FieldIssue[] }
+export type Invalid = { kind: 'invalid'; issues: FieldIssue[] };
+
+/** Every way a visitor or admin write can fail, shared by entries, flags, chain stories and reactions. */
+export type WriteFailure =
+  | Invalid
   | { kind: 'rejected'; guardrail: 'heldForEdit' | 'blocked'; issues: FieldIssue[] }
   | { kind: 'rateLimited'; retryAfter: number; message: string }
   | { kind: 'notFound' }
   | { kind: 'conflict'; currentVersion: number }
-  | { kind: 'duplicateId'; id: string };
+  | { kind: 'duplicateId'; id: string }
+  | { kind: 'refused'; message: string };
+
+export type EntryWriteResult = { kind: 'created'; entry: Entry } | { kind: 'saved'; entry: Entry } | WriteFailure;
 
 export function issuesFrom(error: z.ZodError): FieldIssue[] {
   return error.issues.map((issue) => ({
@@ -23,6 +27,6 @@ export function issuesFrom(error: z.ZodError): FieldIssue[] {
   }));
 }
 
-export function invalid(field: string, message: string): EntryWriteResult {
+export function invalid(field: string, message: string): Invalid {
   return { kind: 'invalid', issues: [{ field, message }] };
 }

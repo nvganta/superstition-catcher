@@ -1,5 +1,18 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, type Collection } from 'mongodb';
 import { assertSafeMongoUri, DB_NAME, MONGO_CLIENT_OPTIONS } from '../src/lib/db/safeMongo';
+
+const NAMESPACE_NOT_FOUND = 26;
+const INDEX_NOT_FOUND = 27;
+
+/** Replaced indexes are dropped by name, so a rerun on an already-updated database is a no-op. */
+async function dropIndexIfPresent(collection: Collection, name: string) {
+  try {
+    await collection.dropIndex(name);
+  } catch (error) {
+    const code = (error as { code?: number }).code;
+    if (code !== NAMESPACE_NOT_FOUND && code !== INDEX_NOT_FOUND) throw error;
+  }
+}
 
 export async function ensureIndexes(db: ReturnType<MongoClient['db']>) {
   await db.collection('entries').createIndex({ id: 1 }, { unique: true, name: 'entries_id_unique' });
@@ -34,11 +47,18 @@ export async function ensureIndexes(db: ReturnType<MongoClient['db']>) {
 
   await db.collection('categories').createIndex({ slug: 1 }, { unique: true, name: 'categories_slug_unique' });
 
+  await dropIndexIfPresent(db.collection('flags'), 'flags_target_visitor_unique');
   await db.collection('flags').createIndex(
-    { targetType: 1, targetId: 1, visitorId: 1 },
-    { unique: true, name: 'flags_target_visitor_unique' }
+    { targetType: 1, targetId: 1, visitorId: 1, resolvedAt: 1 },
+    { unique: true, name: 'flags_target_visitor_open_unique' }
   );
   await db.collection('flags').createIndex({ entryId: 1 }, { name: 'flags_entryId' });
+
+  await db.collection('statusTransitions').createIndex(
+    { targetType: 1, targetId: 1, at: -1 },
+    { name: 'statusTransitions_target_at' }
+  );
+  await db.collection('statusTransitions').createIndex({ actor: 1, at: -1 }, { name: 'statusTransitions_actor_at' });
 
   await db.collection('reactions').createIndex(
     { entryId: 1, visitorId: 1, kind: 1 },

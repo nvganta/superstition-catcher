@@ -72,6 +72,17 @@ export function slugify(text: string): string {
   return slug || 'entry';
 }
 
+/** Splits a partial update so cleared optional fields are removed rather than left at their old value. */
+export function setAndUnset(fields: Record<string, unknown>): { $set: Document; $unset?: Record<string, ''> } {
+  const $set: Document = {};
+  const cleared: Record<string, ''> = {};
+  for (const [field, value] of Object.entries(fields)) {
+    if (value === undefined) cleared[field] = '';
+    else $set[field] = value;
+  }
+  return Object.keys(cleared).length > 0 ? { $set, $unset: cleared } : { $set };
+}
+
 export function isDuplicateKeyError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 11000;
 }

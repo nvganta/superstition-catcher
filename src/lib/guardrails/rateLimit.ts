@@ -14,6 +14,9 @@ export const DAILY_LIMITS: Record<Exclude<RateLimitAction, 'post'>, number> = {
 };
 
 export const MIN_POST_INTERVAL_SECONDS = 30;
+
+/** Reporting two stories on one page is normal, so flags keep only their daily cap. */
+const SKIPS_POST_INTERVAL: ReadonlySet<RateLimitAction> = new Set(['flag']);
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function startOfUtcDay(date: Date): Date {
@@ -35,10 +38,9 @@ export async function checkRateLimit(
   const windowStart = startOfUtcDay(now);
   const expiresAt = endOfUtcDay(now);
 
-  const lastPost = await collection.findOne(
-    { visitorId, action: 'post' },
-    { sort: { lastPostAt: -1 } }
-  );
+  const lastPost = SKIPS_POST_INTERVAL.has(action)
+    ? null
+    : await collection.findOne({ visitorId, action: 'post' }, { sort: { lastPostAt: -1 } });
 
   if (lastPost?.lastPostAt) {
     const elapsedMs = now.getTime() - new Date(lastPost.lastPostAt).getTime();
@@ -82,20 +84,22 @@ export async function recordRateLimitEvent(
   const windowStart = startOfUtcDay(now);
   const expiresAt = endOfUtcDay(now);
 
-  await collection.updateOne(
-    { visitorId, action: 'post' },
-    {
-      $set: {
-        visitorId,
-        action: 'post',
-        count: 1,
-        windowStart,
-        lastPostAt: now,
-        expiresAt,
+  if (!SKIPS_POST_INTERVAL.has(action)) {
+    await collection.updateOne(
+      { visitorId, action: 'post' },
+      {
+        $set: {
+          visitorId,
+          action: 'post',
+          count: 1,
+          windowStart,
+          lastPostAt: now,
+          expiresAt,
+        },
       },
-    },
-    { upsert: true }
-  );
+      { upsert: true }
+    );
+  }
 
   if (action === 'post') {
     return;
