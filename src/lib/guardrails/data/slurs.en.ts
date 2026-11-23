@@ -1,17 +1,13 @@
-/**
- * English slur terms for moderation. Extend per locale in additional data files.
- * Source: curated blocklist; expand with maintained community lists in later waves.
- */
-export const SLUR_TERMS_EN: readonly string[] = [
-  'faggot',
-  'fagot',
-  'nigger',
-  'nigga',
-  'kike',
-  'spic',
-  'chink',
-  'gook',
-  'wetback',
-  'retard',
-  'tranny',
+import type { SlurTerm } from '../slurs';
+
+export const SLUR_TERMS_EN: readonly SlurTerm[] = [
+  { term: 'faggot', match: 'anywhere' },
+  { term: 'nigger', match: 'anywhere' },
+  { term: 'nigga', match: 'word' },
+  { term: 'kike', match: 'word' },
+  { term: 'spic', match: 'word' },
+  { term: 'gook', match: 'word' },
+  { term: 'wetback', match: 'anywhere' },
+  { term: 'retard', match: 'word' },
+  { term: 'tranny', match: 'word' },
 ];
