@@ -17,18 +17,20 @@ const PREVIOUS_POSTS_COMPARED = 5;
 type GuardedFields = Pick<
   Entry,
   'title' | 'country' | 'postedBy' | 'theDefault' | 'whyItStarted' | 'whyItStuck' | 'whatsChangedSince' | 'freshLook'
->;
+> & { countryFlag?: string; sources: { title: string }[] };
 
 function guardedFields(entry: GuardedFields): Record<string, string | undefined> {
   return {
     title: entry.title,
     country: entry.country,
+    countryFlag: entry.countryFlag,
     postedBy: entry.postedBy,
     theDefault: entry.theDefault,
     whyItStarted: entry.whyItStarted,
     whyItStuck: entry.whyItStuck,
     whatsChangedSince: entry.whatsChangedSince,
     freshLook: entry.freshLook,
+    sourceTitles: entry.sources.map((source) => source.title).join('\n') || undefined,
   };
 }
 
@@ -117,9 +119,9 @@ export async function postCommunityEntry(
     updatedAt: now,
   });
 
+  await recordRateLimitEvent(db, input.visitorId, 'newEntry', now);
   await entries.insertOne({ ...entry });
   await writeVersionSnapshot(db, entry, now);
-  await recordRateLimitEvent(db, input.visitorId, 'newEntry', now);
   await db
     .collection('visitors')
     .updateOne(

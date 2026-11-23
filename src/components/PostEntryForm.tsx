@@ -22,6 +22,7 @@ const FIELD_LABELS: Record<string, string> = {
   whatsChangedSince: "What's changed since",
   freshLook: 'A fresh look',
   postedBy: 'Your name',
+  sourceTitles: 'Where you learned it',
   'sources.0.title': 'Source title',
   'sources.0.url': 'Source link',
 };

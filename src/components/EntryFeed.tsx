@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Region } from '@/lib/schema/common';
-import type { Entry } from '@/lib/schema/entry';
+import type { PublicEntry } from '@/lib/entries/documents';
 import { REGIONS, regionLabels, type CategoryLabels } from '@/lib/entries/labels';
 import EntryCard from './EntryCard';
 
@@ -10,7 +10,7 @@ export default function EntryFeed({
   entries,
   categoryLabels,
 }: {
-  entries: Entry[];
+  entries: PublicEntry[];
   categoryLabels: CategoryLabels;
 }) {
   const [activeRegion, setActiveRegion] = useState<Region | 'all'>('all');

@@ -57,15 +57,34 @@ describe('community entry posting', () => {
       status: 'live',
       version: 1,
       postedBy: 'Asha',
-      postedByVisitorId: visitorId,
       theDefault: 'Sweeping after dark sweeps the household luck out of the door.',
     });
+    const admin = (await store.listAllForAdmin()).find((entry) => entry.id === result.entry.id);
+    expect(admin?.postedByVisitorId).toBe(visitorId);
     expect((await store.search('oil lamps')).map((entry) => entry.id)).toContain(result.entry.id);
 
     const snapshot = await mongo.db.collection('entryVersions').findOne({ entryId: result.entry.id });
     expect(snapshot?.version).toBe(1);
     expect(snapshot?.snapshot.origin).toBe('community');
     expect(await mongo.db.collection('visitors').countDocuments({ id: visitorId })).toBe(1);
+  });
+
+  it("never exposes the poster's visitor id through a public read", async () => {
+    const result = await store.postCommunity(post(), start);
+    if (result.kind !== 'created') throw new Error('setup failed');
+    const id = result.entry.id;
+
+    const publicReads = [
+      await store.getLive(id),
+      ...(await store.listLive()),
+      ...(await store.search('oil lamps')),
+      ...(await store.listRelated((await store.getLive(id))!)),
+      await store.entryOfTheDay(),
+    ];
+    expect(publicReads.some((entry) => entry?.id === id)).toBe(true);
+    for (const entry of publicReads) {
+      expect(entry).not.toHaveProperty('postedByVisitorId');
+    }
   });
 
   it('reports missing required fields without storing anything', async () => {
@@ -110,6 +129,36 @@ describe('community entry posting', () => {
     expect(result.guardrail).toBe('blocked');
     expect(JSON.stringify(result.issues)).not.toMatch(/n1gg3r|nigger/i);
     expect(await mongo.db.collection('entries').countDocuments()).toBe(0);
+  });
+
+  it('checks source titles and the flag, which are shown publicly', async () => {
+    const pii = await store.postCommunity(
+      post({ sources: [{ title: 'Uncle Ravi, 555-123-4567', kind: 'oral' }] }),
+      start
+    );
+    expect(pii).toMatchObject({
+      kind: 'rejected',
+      guardrail: 'heldForEdit',
+      issues: [{ field: 'sourceTitles', message: 'Please remove phone numbers before posting.' }],
+    });
+
+    const slur = await store.postCommunity(
+      post({ sources: [{ title: 'n1gg3r jokes weekly', kind: 'web' }] }),
+      start
+    );
+    expect(slur).toMatchObject({ kind: 'rejected', guardrail: 'blocked' });
+    expect(await mongo.db.collection('entries').countDocuments()).toBe(0);
+  });
+
+  it('accepts only http and https source links', async () => {
+    const result = await store.postCommunity(
+      post({ sources: [{ title: 'A page', url: 'javascript:alert(1)', kind: 'web' }] }),
+      start
+    );
+    expect(result).toEqual({
+      kind: 'invalid',
+      issues: [{ field: 'sources.0.url', message: 'Source link must start with http:// or https://' }],
+    });
   });
 
   it('enforces the minimum interval between posts from one visitor', async () => {

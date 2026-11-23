@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import type { Entry } from '@/lib/schema/entry';
+import type { PublicEntry } from '@/lib/entries/documents';
 import { getEntryStore } from '@/lib/entries/store';
 import { categoryLabelMap, confidenceLabels, sourceKindLabels } from '@/lib/entries/labels';
 import OriginBadge from '@/components/OriginBadge';
@@ -16,13 +16,13 @@ const NARRATIVE_SECTIONS = [
   { field: 'whyItStuck', title: 'WHY IT STUCK', icon: '🔁', bar: 'bg-teal', dot: 'bg-teal/15' },
   { field: 'whatsChangedSince', title: "WHAT'S CHANGED SINCE", icon: '📱', bar: 'bg-coral', dot: 'bg-coral/15' },
   { field: 'freshLook', title: 'A FRESH LOOK', icon: '💭', bar: 'bg-lavender', dot: 'bg-lavender/25' },
-] as const satisfies ReadonlyArray<{ field: keyof Entry; [key: string]: string }>;
+] as const satisfies ReadonlyArray<{ field: keyof PublicEntry; [key: string]: string }>;
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function postedLine(entry: Entry): string {
+function postedLine(entry: PublicEntry): string {
   return entry.origin === 'curated'
     ? `Curated by the editors · updated ${formatDate(entry.updatedAt)}`
     : `Posted by ${entry.postedBy ?? 'a visitor'} · ${formatDate(entry.createdAt)}`;

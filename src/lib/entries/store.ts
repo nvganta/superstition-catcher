@@ -5,7 +5,7 @@ import type { Region } from '@/lib/schema/common';
 import type { Entry } from '@/lib/schema/entry';
 import { postCommunityEntry } from './community';
 import { createCuratedEntry, updateEntry } from './curated';
-import { parseCategoryDocs, parseEntryDocs } from './documents';
+import { parseCategoryDocs, parseEntryDocs, parsePublicEntryDocs, type PublicEntry } from './documents';
 
 const LIVE = { status: 'live' } as const;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -19,24 +19,20 @@ function escapeRegex(text: string): string {
 export function createEntryStore(db: Db) {
   const entries = db.collection('entries');
 
-  async function findOne(filter: Filter<Document>): Promise<Entry | null> {
-    const doc = await entries.findOne(filter);
-    return doc ? (parseEntryDocs([doc])[0] ?? null) : null;
-  }
-
   return {
-    async listLive(filter: { region?: Region; categorySlug?: string } = {}): Promise<Entry[]> {
+    async listLive(filter: { region?: Region; categorySlug?: string } = {}): Promise<PublicEntry[]> {
       const query: Filter<Document> = { ...LIVE };
       if (filter.region) query.region = filter.region;
       if (filter.categorySlug) query.categorySlugs = filter.categorySlug;
-      return parseEntryDocs(await entries.find(query).sort({ createdAt: -1, id: 1 }).toArray());
+      return parsePublicEntryDocs(await entries.find(query).sort({ createdAt: -1, id: 1 }).toArray());
     },
 
-    getLive(id: string): Promise<Entry | null> {
-      return findOne({ ...LIVE, id });
+    async getLive(id: string): Promise<PublicEntry | null> {
+      const doc = await entries.findOne({ ...LIVE, id });
+      return doc ? (parsePublicEntryDocs([doc])[0] ?? null) : null;
     },
 
-    async search(rawQuery: string, limit = 8): Promise<Entry[]> {
+    async search(rawQuery: string, limit = 8): Promise<PublicEntry[]> {
       const query = rawQuery.trim().slice(0, MAX_QUERY_LENGTH);
       if (query.length < MIN_QUERY_LENGTH) {
         return [];
@@ -56,24 +52,24 @@ export function createEntryStore(db: Db) {
           .toArray(),
       ]);
 
-      const byId = new Map<string, Entry>();
-      for (const entry of parseEntryDocs([...textDocs, ...prefixDocs])) {
+      const byId = new Map<string, PublicEntry>();
+      for (const entry of parsePublicEntryDocs([...textDocs, ...prefixDocs])) {
         if (!byId.has(entry.id)) byId.set(entry.id, entry);
       }
       return [...byId.values()].slice(0, limit);
     },
 
-    async entryOfTheDay(date = new Date()): Promise<Entry | null> {
+    async entryOfTheDay(date = new Date()): Promise<PublicEntry | null> {
       const count = await entries.countDocuments(LIVE);
       if (count === 0) {
         return null;
       }
       const dayNumber = Math.floor(date.getTime() / DAY_MS);
       const docs = await entries.find(LIVE).sort({ id: 1 }).skip(dayNumber % count).limit(1).toArray();
-      return parseEntryDocs(docs)[0] ?? null;
+      return parsePublicEntryDocs(docs)[0] ?? null;
     },
 
-    async listRelated(entry: Entry, limit = 3): Promise<Entry[]> {
+    async listRelated(entry: PublicEntry, limit = 3): Promise<PublicEntry[]> {
       const docs = await entries
         .find({
           ...LIVE,
@@ -83,7 +79,7 @@ export function createEntryStore(db: Db) {
         .sort({ createdAt: -1, id: 1 })
         .limit(limit)
         .toArray();
-      return parseEntryDocs(docs);
+      return parsePublicEntryDocs(docs);
     },
 
     async listCategories(): Promise<Category[]> {

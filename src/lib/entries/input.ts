@@ -21,7 +21,15 @@ const optionalText = (max: number) =>
 
 const sourceInputSchema = z.object({
   title: requiredText(FIELD_LIMITS.sourceTitle),
-  url: z.preprocess(blankToUndefined, z.string().trim().url('Source link must be a full URL').optional()),
+  url: z.preprocess(
+    blankToUndefined,
+    z
+      .string()
+      .trim()
+      .url('Source link must be a full URL')
+      .refine((url) => /^https?:\/\//i.test(url), 'Source link must start with http:// or https://')
+      .optional()
+  ),
   kind: sourceKindSchema,
 });
 

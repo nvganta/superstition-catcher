@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import type { Entry } from '@/lib/schema/entry';
+import type { PublicEntry } from '@/lib/entries/documents';
 import type { CategoryLabels } from '@/lib/entries/labels';
 import OriginBadge from './OriginBadge';
 
-function primaryCategory(entry: Entry, categoryLabels: CategoryLabels): string {
+function primaryCategory(entry: PublicEntry, categoryLabels: CategoryLabels): string {
   const slug = entry.categorySlugs[0];
   return categoryLabels[slug] ?? slug;
 }
@@ -13,7 +13,7 @@ export default function EntryCard({
   categoryLabels,
   featured = false,
 }: {
-  entry: Entry;
+  entry: PublicEntry;
   categoryLabels: CategoryLabels;
   featured?: boolean;
 }) {
