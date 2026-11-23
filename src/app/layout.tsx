@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
-import SubmitMyth from '@/components/SubmitMyth';
+import PostEntryButton from '@/components/PostEntryButton';
 import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
-  title: 'Superstition Buster — Busting Myths From Around the World',
+  title: 'Superstition Buster: A Living Record of Inherited Traditions',
   description:
-    'Discover the real reasons behind superstitions from India, Japan, China, and beyond. Every myth investigated, every origin uncovered.',
+    'Traditions from India, Japan, China, and beyond, as inherited defaults worth a fresh look: where they started, why they stuck, and what has changed since.',
 };
 
 export default function RootLayout({
@@ -36,7 +36,7 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
-        <SubmitMyth />
+        <PostEntryButton />
         <Analytics />
       </body>
     </html>
