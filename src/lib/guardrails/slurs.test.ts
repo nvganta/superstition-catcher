@@ -22,8 +22,22 @@ describe('slur lists by locale', () => {
     expect(localesIn('मादर चोद')).toEqual(['hi']);
   });
 
+  it('finds short-vowel spellings and inflected forms in Devanagari', () => {
+    for (const text of ['चुतिया', 'वे चूतिये हैं', 'रंडियाँ', 'रंडियों से', 'कटुए']) {
+      expect(localesIn(text), text).toEqual(['hi']);
+    }
+  });
+
+  it('finds English slurs with leetspeak at the edge of a word or in common inflections', () => {
+    for (const text of ['n1gg@', 'nigg@ please', '$pic go home', '$pics', 'you retarded idiot', 'RETARDED', 'niggaz', '(spic)']) {
+      expect(localesIn(text), text).toEqual(['en']);
+    }
+    expect(localesIn('ｒｅｔａｒｄ')).toEqual(['en']);
+    expect(localesIn('ni­gger')).toEqual(['en']);
+  });
+
   it('finds common romanized spellings of Hindi slurs', () => {
-    for (const text of ['what a chutiya', 'CHOOTIYA', 'chutiyaa log', 'm@darch0d', 'bhen-chod', 'behenchod']) {
+    for (const text of ['what a chutiya', 'CHOOTIYA', 'chutiyaa log', 'chutiye', 'm@darch0d', 'bhen-chod', 'behenchod']) {
       expect(localesIn(text), text).toEqual(['hi']);
     }
   });
@@ -38,6 +52,7 @@ describe('slur lists by locale', () => {
   it('leaves ordinary Hindi and Telugu alone, including words that sound like a slur in the other language', () => {
     expect(localesIn('లోపలికి రండి, భోజనం చేద్దాం')).toEqual([]);
     expect(localesIn('lopaliki randi, bhojanam cheddam')).toEqual([]);
+    expect(localesIn('కలంజ విలంజ')).toEqual([]);
     expect(localesIn('मंडी में घमंडी व्यापारी पगडंडी पर चला')).toEqual([]);
     expect(localesIn('We took the train through Katwa and Kathua')).toEqual([]);
   });

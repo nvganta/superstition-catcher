@@ -17,22 +17,27 @@ const LEET_MAP: Record<string, string> = {
   '+': 't',
 };
 
-const ZERO_WIDTH = /[​-‍⁠﻿]/g;
+const INVISIBLE = /[­​-‍⁠﻿]/g;
 const DEVANAGARI_NUKTA = /़/g;
 const DEVANAGARI_CANDRABINDU = /ँ/g;
 const DEVANAGARI_ANUSVARA = 'ं';
+const DEVANAGARI_LONG_U = /ू/g;
+const DEVANAGARI_SHORT_U = 'ु';
+const DEVANAGARI_LONG_I = /ी/g;
+const DEVANAGARI_SHORT_I = 'ि';
 const NOT_WORD_CHAR = /[^\p{L}\p{M}\p{N}]+/u;
 const EDGE_PUNCTUATION = /^[^\p{L}\p{M}\p{N}]+|[^\p{L}\p{M}\p{N}]+$/gu;
 
 /**
- * One spelling per letter: canonical Unicode order, no zero-width joiners, and the Devanagari
- * marks people swap freely (a nukta dropped, a candrabindu written as an anusvara).
+ * One spelling per letter: compatibility forms folded (fullwidth letters), no invisible joiners
+ * or soft hyphens, and the Devanagari marks people swap freely (a nukta dropped, a candrabindu
+ * written as an anusvara).
  */
 function canonicalLetters(text: string): string {
   return text
-    .normalize('NFC')
+    .normalize('NFKC')
     .toLowerCase()
-    .replace(ZERO_WIDTH, '')
+    .replace(INVISIBLE, '')
     .replace(DEVANAGARI_NUKTA, '')
     .replace(DEVANAGARI_CANDRABINDU, DEVANAGARI_ANUSVARA);
 }
@@ -45,20 +50,31 @@ export function normalizeForModeration(text: string): string {
   return unLeet(canonicalLetters(text).replace(/[\s\-_.*]+/g, ''));
 }
 
-/** Words with leetspeak inside them undone, so "n1gg3r" stays one word while "retard!" loses only its "!". */
+/**
+ * Words with leetspeak undone. A symbol at a word's edge is either punctuation ("(spic)") or a
+ * letter ("$pic"), so each chunk yields both readings.
+ */
 export function tokenizeForModeration(text: string): string[] {
   return canonicalLetters(text)
     .split(/\s+/)
-    .flatMap((chunk) => unLeet(chunk.replace(EDGE_PUNCTUATION, '')).split(NOT_WORD_CHAR))
+    .flatMap((chunk) => [
+      ...unLeet(chunk.replace(EDGE_PUNCTUATION, '')).split(NOT_WORD_CHAR),
+      ...unLeet(chunk).replace(EDGE_PUNCTUATION, '').split(NOT_WORD_CHAR),
+    ])
     .filter(Boolean);
 }
 
-/** Collapses the vowel spellings and doubled letters that vary across romanized Hindi and Telugu. */
-export function foldRomanizedIndic(text: string): string {
+/**
+ * Hindi and Telugu have no fixed spelling in Latin letters, and Devanagari writers often swap
+ * long and short vowels, so "chootiya", "chutiya", "चूतिया" and "चुतिया" must meet.
+ */
+export function foldIndicSpelling(text: string): string {
   return text
     .replace(/oo|uu/g, 'u')
     .replace(/ee|ii/g, 'i')
     .replace(/aa/g, 'a')
     .replace(/w/g, 'v')
-    .replace(/([a-z])\1+/g, '$1');
+    .replace(/([a-z])\1+/g, '$1')
+    .replace(DEVANAGARI_LONG_U, DEVANAGARI_SHORT_U)
+    .replace(DEVANAGARI_LONG_I, DEVANAGARI_SHORT_I);
 }

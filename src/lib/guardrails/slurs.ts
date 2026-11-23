@@ -1,7 +1,7 @@
 import { SLUR_TERMS_EN } from './data/slurs.en';
 import { SLUR_TERMS_HI } from './data/slurs.hi';
 import { SLUR_TERMS_TE } from './data/slurs.te';
-import { foldRomanizedIndic, normalizeForModeration, tokenizeForModeration } from './normalize';
+import { foldIndicSpelling, normalizeForModeration, tokenizeForModeration } from './normalize';
 
 /**
  * `word` matches a whole word or its plural in s, for short terms that hide inside ordinary words
@@ -19,14 +19,14 @@ export type SlurLocale = 'en' | 'hi' | 'te';
 
 interface SlurLocaleList {
   terms: readonly SlurTerm[];
-  /** Romanized Hindi and Telugu have no fixed spelling, so "chootiya" and "chutiya" must meet. */
-  foldRomanized: boolean;
+  /** See foldIndicSpelling. */
+  foldSpelling: boolean;
 }
 
 export const SLUR_LISTS: Record<SlurLocale, SlurLocaleList> = {
-  en: { terms: SLUR_TERMS_EN, foldRomanized: false },
-  hi: { terms: SLUR_TERMS_HI, foldRomanized: true },
-  te: { terms: SLUR_TERMS_TE, foldRomanized: true },
+  en: { terms: SLUR_TERMS_EN, foldSpelling: false },
+  hi: { terms: SLUR_TERMS_HI, foldSpelling: true },
+  te: { terms: SLUR_TERMS_TE, foldSpelling: true },
 };
 
 /** Which list matched, never the term, so nothing downstream can echo it back. */
@@ -59,11 +59,11 @@ function matchesTerm(text: PreparedText, { term, match }: SlurTerm, fold: Fold):
 }
 
 export function findSlurMatches(text: string): SlurMatch[] {
-  const prepared = { plain: prepare(text, unfolded), folded: prepare(text, foldRomanizedIndic) };
+  const prepared = { plain: prepare(text, unfolded), folded: prepare(text, foldIndicSpelling) };
 
   return (Object.entries(SLUR_LISTS) as [SlurLocale, SlurLocaleList][]).flatMap(([locale, list]) => {
-    const fold = list.foldRomanized ? foldRomanizedIndic : unfolded;
-    const target = list.foldRomanized ? prepared.folded : prepared.plain;
+    const fold = list.foldSpelling ? foldIndicSpelling : unfolded;
+    const target = list.foldSpelling ? prepared.folded : prepared.plain;
     return list.terms.some((term) => matchesTerm(target, term, fold)) ? [{ locale }] : [];
   });
 }
