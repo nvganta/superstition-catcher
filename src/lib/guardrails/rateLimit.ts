@@ -104,13 +104,6 @@ export async function recordRateLimitEvent(
   await collection.updateOne(
     { visitorId, action, windowStart },
     {
-      $setOnInsert: {
-        visitorId,
-        action,
-        windowStart,
-        expiresAt,
-        count: 0,
-      },
       $inc: { count: 1 },
       $set: { expiresAt },
     },

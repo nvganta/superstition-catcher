@@ -1,12 +1,12 @@
 import { MongoClient } from 'mongodb';
 import { seedCategories } from '../src/lib/categories/seedCategories';
-import { assertSafeMongoUri, DB_NAME } from '../src/lib/db/safeMongo';
+import { assertSafeMongoUri, DB_NAME, MONGO_CLIENT_OPTIONS } from '../src/lib/db/safeMongo';
 
 async function main() {
   const uri = process.env.MONGODB_URI;
   assertSafeMongoUri(uri, 'seed-categories');
 
-  const client = new MongoClient(uri);
+  const client = new MongoClient(uri, MONGO_CLIENT_OPTIONS);
   await client.connect();
 
   try {

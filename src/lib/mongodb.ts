@@ -1,31 +1,18 @@
 import { MongoClient, Db } from 'mongodb';
+import { DB_NAME, MONGO_CLIENT_OPTIONS } from '@/lib/db/safeMongo';
 
-const uri = process.env.MONGODB_URI!;
-const dbName = 'superstition-buster';
+let clientPromise: Promise<MongoClient> | null = null;
 
-let cachedClient: MongoClient | null = null;
-let cachedDb: Db | null = null;
-
-export async function getDb(): Promise<Db> {
-  if (cachedDb) return cachedDb;
-
-  const client = new MongoClient(uri);
-  await client.connect();
-
-  cachedClient = client;
-  cachedDb = client.db(dbName);
-
-  return cachedDb;
+export function getClient(): Promise<MongoClient> {
+  clientPromise ??= new MongoClient(process.env.MONGODB_URI!, MONGO_CLIENT_OPTIONS)
+    .connect()
+    .catch((error) => {
+      clientPromise = null;
+      throw error;
+    });
+  return clientPromise;
 }
 
-export async function getClient(): Promise<MongoClient> {
-  if (cachedClient) return cachedClient;
-
-  const client = new MongoClient(uri);
-  await client.connect();
-
-  cachedClient = client;
-  cachedDb = client.db(dbName);
-
-  return cachedClient;
+export async function getDb(): Promise<Db> {
+  return (await getClient()).db(DB_NAME);
 }

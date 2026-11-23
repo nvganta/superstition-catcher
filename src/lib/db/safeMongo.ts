@@ -18,3 +18,6 @@ export function assertSafeMongoUri(uri: string | undefined, context = 'script'):
 }
 
 export const DB_NAME = 'superstition-buster';
+
+/** Without ignoreUndefined the driver stores optional fields as null, which the Zod schemas reject on read. */
+export const MONGO_CLIENT_OPTIONS = { ignoreUndefined: true } as const;
