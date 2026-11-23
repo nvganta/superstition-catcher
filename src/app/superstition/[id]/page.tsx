@@ -1,235 +1,217 @@
-'use client';
-
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getSuperstitionById, categoryLabels, superstitions } from '@/data/superstitions';
-import VerdictBadge from '@/components/VerdictBadge';
-import SuperstitionCard from '@/components/SuperstitionCard';
+import { notFound } from 'next/navigation';
+import type { Entry } from '@/lib/schema/entry';
+import { getEntryStore } from '@/lib/entries/store';
+import { categoryLabelMap, confidenceLabels, sourceKindLabels } from '@/lib/entries/labels';
+import OriginBadge from '@/components/OriginBadge';
+import EntryCard from '@/components/EntryCard';
 import Reactions from '@/components/Reactions';
 import Comments from '@/components/Comments';
 
-export default function SuperstitionDetailPage() {
-  const params = useParams();
-  const s = getSuperstitionById(params.id as string);
+export const dynamic = 'force-dynamic';
 
-  if (!s) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-20 text-center">
-        <div className="text-6xl mb-4">🕵️</div>
-        <h1 className="font-display text-2xl text-ink mb-2">Case Not Found</h1>
-        <p className="text-ink/50 mb-6">
-          This superstition seems to have vanished into thin air.
-        </p>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-ink text-cream rounded-lg font-medium text-sm hover:bg-navy transition-colors"
-        >
-          ← Back to HQ
-        </Link>
-      </div>
-    );
+const NARRATIVE_SECTIONS = [
+  { field: 'theDefault', title: 'THE DEFAULT', icon: '🗣️', bar: 'bg-amber', dot: 'bg-amber/15' },
+  { field: 'whyItStarted', title: 'WHY IT STARTED', icon: '📜', bar: 'bg-slate-blue', dot: 'bg-slate-blue/15' },
+  { field: 'whyItStuck', title: 'WHY IT STUCK', icon: '🔁', bar: 'bg-teal', dot: 'bg-teal/15' },
+  { field: 'whatsChangedSince', title: "WHAT'S CHANGED SINCE", icon: '📱', bar: 'bg-coral', dot: 'bg-coral/15' },
+  { field: 'freshLook', title: 'A FRESH LOOK', icon: '💭', bar: 'bg-lavender', dot: 'bg-lavender/25' },
+] as const satisfies ReadonlyArray<{ field: keyof Entry; [key: string]: string }>;
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function postedLine(entry: Entry): string {
+  return entry.origin === 'curated'
+    ? `Curated by the editors · updated ${formatDate(entry.updatedAt)}`
+    : `Posted by ${entry.postedBy ?? 'a visitor'} · ${formatDate(entry.createdAt)}`;
+}
+
+export default async function EntryDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const store = await getEntryStore();
+  const entry = await store.getLive(id);
+  if (!entry) {
+    notFound();
   }
-
-  // Get related superstitions (same category or region, excluding current)
-  const related = superstitions
-    .filter(
-      (other) =>
-        other.id !== s.id &&
-        (other.category === s.category || other.region === s.region)
-    )
-    .slice(0, 3);
+  const [related, categories] = await Promise.all([store.listRelated(entry), store.listCategories()]);
+  const categoryLabels = categoryLabelMap(categories);
+  const confidence = entry.confidence ? confidenceLabels[entry.confidence] : null;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-ink/40 mb-8">
         <Link href="/" className="hover:text-ink transition-colors">
           Home
         </Link>
         <span>/</span>
         <Link href="/explore" className="hover:text-ink transition-colors">
-          {s.country}
+          {entry.country}
         </Link>
         <span>/</span>
-        <span className="text-ink/60 truncate">{s.title}</span>
+        <span className="text-ink/60 truncate">{entry.title}</span>
       </div>
 
-      {/* Case File Header */}
       <div className="paper-card rounded-xl p-6 sm:p-10 mb-8 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-coral via-amber to-teal" />
 
         <div className="flex flex-wrap items-center gap-3 mb-5">
-          <span className="evidence-tag">Case File</span>
+          <span className="evidence-tag">Entry</span>
           <span className="text-xs font-mono text-ink/30">
-            #{s.id.toUpperCase().replace(/-/g, '')}
+            #{entry.id.toUpperCase().replace(/-/g, '')}
           </span>
-          <span className="text-xs text-ink/20">|</span>
-          <span className="text-sm text-ink/50">{categoryLabels[s.category]}</span>
+          <OriginBadge origin={entry.origin} />
         </div>
 
         <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-ink leading-tight mb-4">
-          {s.title}
+          {entry.title}
         </h1>
 
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{s.countryFlag}</span>
-          <span className="text-ink/60 font-medium">{s.country}</span>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <span className="text-2xl">{entry.countryFlag}</span>
+          <span className="text-ink/60 font-medium">{entry.country}</span>
+          <span className="text-ink/20">•</span>
+          {entry.categorySlugs.map((slug) => (
+            <Link
+              key={slug}
+              href={`/categories/${slug}`}
+              className="text-xs font-semibold px-2.5 py-1 rounded-full bg-ink/5 text-ink/60 hover:bg-ink/10 hover:text-ink transition-colors"
+            >
+              {categoryLabels[slug] ?? slug}
+            </Link>
+          ))}
         </div>
+
+        <p className="text-xs text-ink/40">{postedLine(entry)}</p>
       </div>
 
-      {/* Investigation Sections */}
       <div className="space-y-6">
-        {/* What People Believe */}
-        <section className="paper-card rounded-xl p-6 sm:p-8 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-amber" />
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-8 h-8 rounded-full bg-amber/15 flex items-center justify-center text-sm">
-              🗣️
-            </span>
-            <h2 className="font-display text-base tracking-tight text-ink">
-              WHAT PEOPLE BELIEVE
-            </h2>
-          </div>
-          <p className="text-ink/70 leading-relaxed text-base sm:text-lg pl-11">
-            {s.whatPeopleBelieve}
-          </p>
-        </section>
+        {NARRATIVE_SECTIONS.map((section) => {
+          const text = entry[section.field];
+          if (!text) return null;
+          return (
+            <section key={section.field} className="paper-card rounded-xl p-6 sm:p-8 relative overflow-hidden">
+              <div className={`absolute top-0 left-0 w-1.5 h-full ${section.bar}`} />
+              <div className="flex items-center gap-3 mb-4">
+                <span className={`w-8 h-8 rounded-full ${section.dot} flex items-center justify-center text-sm`}>
+                  {section.icon}
+                </span>
+                <h2 className="font-display text-base tracking-tight text-ink">{section.title}</h2>
+              </div>
+              <p className="text-ink/70 leading-relaxed text-base sm:text-lg pl-11 whitespace-pre-line">{text}</p>
+            </section>
+          );
+        })}
 
-        {/* Historical Origin */}
-        <section className="paper-card rounded-xl p-6 sm:p-8 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-slate-blue" />
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-8 h-8 rounded-full bg-slate-blue/15 flex items-center justify-center text-sm">
-              📜
-            </span>
-            <h2 className="font-display text-base tracking-tight text-ink">
-              HISTORICAL ORIGIN
-            </h2>
-          </div>
-          <p className="text-ink/70 leading-relaxed text-base sm:text-lg pl-11">
-            {s.historicalOrigin}
-          </p>
-        </section>
-
-        {/* The Real Reason */}
-        <section className="paper-card rounded-xl p-6 sm:p-8 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-teal" />
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-8 h-8 rounded-full bg-teal/15 flex items-center justify-center text-sm">
-              🔬
-            </span>
-            <h2 className="font-display text-base tracking-tight text-ink">
-              THE REAL REASON
-            </h2>
-          </div>
-          <p className="text-ink/70 leading-relaxed text-base sm:text-lg pl-11">
-            {s.theRealReason}
-          </p>
-        </section>
-
-        {/* The Modern Twist */}
-        <section className="paper-card rounded-xl p-6 sm:p-8 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-coral" />
-          <div className="flex items-center gap-3 mb-4">
-            <span className="w-8 h-8 rounded-full bg-coral/15 flex items-center justify-center text-sm">
-              📱
-            </span>
-            <h2 className="font-display text-base tracking-tight text-ink">
-              THE MODERN TWIST
-            </h2>
-          </div>
-          <p className="text-ink/70 leading-relaxed text-base sm:text-lg pl-11">
-            {s.modernTwist}
-          </p>
-        </section>
-
-        {/* Verdict */}
         <section className="paper-card rounded-xl p-6 sm:p-8 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-coral via-amber to-teal" />
-          <h2 className="font-display text-sm tracking-widest text-ink/40 mb-4">
-            VERDICT
-          </h2>
-          <div className="flex justify-center mb-4">
-            <VerdictBadge verdict={s.verdict} size="lg" />
+          <h2 className="font-display text-sm tracking-widest text-ink/40 mb-4">HOW SURE ARE WE?</h2>
+          {confidence ? (
+            <>
+              <div className="flex justify-center mb-4">
+                <div className="stamp text-stamp-blue bg-stamp-blue/10 border-stamp-blue text-lg px-5 py-2">
+                  {confidence.label}
+                </div>
+              </div>
+              <p className="text-ink/50 text-sm max-w-md mx-auto">{confidence.description}</p>
+            </>
+          ) : (
+            <p className="text-ink/50 text-sm max-w-md mx-auto">
+              A community entry, shared as the poster knows it. The editors have not reviewed it yet.
+            </p>
+          )}
+          {entry.uncertaintyNote && (
+            <p className="text-ink/60 text-sm max-w-md mx-auto mt-4 italic">{entry.uncertaintyNote}</p>
+          )}
+        </section>
+
+        <section className="paper-card rounded-xl p-6 sm:p-8">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-8 h-8 rounded-full bg-ink/5 flex items-center justify-center text-sm">📚</span>
+            <h2 className="font-display text-base tracking-tight text-ink">SOURCES</h2>
           </div>
-          {s.verdict === 'busted' && (
-            <p className="text-ink/50 text-sm max-w-md mx-auto">
-              This one doesn&apos;t hold up to scrutiny. Pure myth, no substance.
-            </p>
-          )}
-          {s.verdict === 'hasMerit' && (
-            <p className="text-ink/50 text-sm max-w-md mx-auto">
-              There&apos;s a kernel of truth here, even if the original reasoning was off.
-            </p>
-          )}
-          {s.verdict === 'practicalOrigin' && (
-            <p className="text-ink/50 text-sm max-w-md mx-auto">
-              This started as genuinely practical advice that evolved into superstition over time.
+          {entry.sources.length > 0 ? (
+            <ul className="space-y-2 pl-11">
+              {entry.sources.map((source) => (
+                <li key={`${source.title}-${source.url ?? ''}`} className="text-ink/70">
+                  <span className="text-xs font-mono uppercase text-ink/40 mr-2">
+                    {sourceKindLabels[source.kind]}
+                  </span>
+                  {source.url ? (
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="underline decoration-amber underline-offset-2 hover:text-ink"
+                    >
+                      {source.title}
+                    </a>
+                  ) : (
+                    source.title
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-ink/50 text-sm pl-11">
+              {entry.legacy
+                ? 'Carried over from the original Superstition Buster collection. Sources have not been attached yet.'
+                : 'No sources listed yet.'}
             </p>
           )}
         </section>
 
-        {/* Fun Fact */}
-        {s.funFact && (
+        {entry.legacy?.funFact && (
           <section className="bg-evidence-yellow/20 border-2 border-evidence-yellow/40 rounded-xl p-6 sm:p-8">
             <div className="flex items-start gap-3">
               <span className="text-2xl shrink-0">💡</span>
               <div>
-                <h2 className="font-display text-sm tracking-tight text-ink mb-2">
-                  FUN FACT
-                </h2>
-                <p className="text-ink/70 leading-relaxed">{s.funFact}</p>
+                <h2 className="font-display text-sm tracking-tight text-ink mb-2">FUN FACT</h2>
+                <p className="text-ink/70 leading-relaxed">{entry.legacy.funFact}</p>
               </div>
             </div>
           </section>
         )}
       </div>
 
-      {/* Reactions */}
       <section className="mt-10">
         <hr className="case-divider mb-8" />
         <div className="flex items-center gap-3 mb-5">
           <span className="text-xl">⚡</span>
-          <h2 className="font-display text-base tracking-tight text-ink">
-            YOUR VERDICT
-          </h2>
+          <h2 className="font-display text-base tracking-tight text-ink">YOUR TAKE</h2>
           <div className="flex-grow h-px bg-ink/10" />
         </div>
-        <Reactions superstitionId={s.id} />
+        <Reactions superstitionId={entry.id} />
       </section>
 
-      {/* Comments */}
       <section className="mt-10">
         <hr className="case-divider mb-8" />
-        <Comments superstitionId={s.id} />
+        <Comments superstitionId={entry.id} />
       </section>
 
-      {/* Related Cases */}
       {related.length > 0 && (
         <section className="mt-16">
           <hr className="case-divider mb-10" />
           <div className="flex items-center gap-3 mb-6">
             <span className="text-xl">🔗</span>
-            <h2 className="font-display text-lg text-ink tracking-tight">
-              RELATED MYTHS
-            </h2>
+            <h2 className="font-display text-lg text-ink tracking-tight">RELATED ENTRIES</h2>
             <div className="flex-grow h-px bg-ink/10" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {related.map((r) => (
-              <SuperstitionCard key={r.id} superstition={r} />
+            {related.map((other) => (
+              <EntryCard key={other.id} entry={other} categoryLabels={categoryLabels} />
             ))}
           </div>
         </section>
       )}
 
-      {/* Back Link */}
       <div className="mt-12 text-center">
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-sm font-medium text-ink/40 hover:text-ink transition-colors"
         >
-          ← Back to all myths
+          ← Back to all entries
         </Link>
       </div>
     </div>
