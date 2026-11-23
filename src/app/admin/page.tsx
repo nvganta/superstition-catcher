@@ -6,6 +6,7 @@ import type { Confidence, Region, SourceKind } from '@/lib/schema/common';
 import type { Entry } from '@/lib/schema/entry';
 import type { FieldIssue } from '@/lib/entries/results';
 import ModerationPanel from '@/components/admin/ModerationPanel';
+import AiNotesPanel from '@/components/admin/AiNotesPanel';
 import {
   REGIONS,
   categoryEmoji,
@@ -250,6 +251,10 @@ export default function AdminPage() {
             Cancel
           </button>
         </div>
+
+        {editing.mode === 'edit' && (
+          <AiNotesPanel password={password} entryId={editing.entry.id} entryVersion={editing.entry.version} />
+        )}
 
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

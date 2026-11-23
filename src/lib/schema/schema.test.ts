@@ -139,11 +139,31 @@ describe('schema validation', () => {
       aiNoteSchema.parse({
         id: '00000000-0000-4000-8000-000000000003',
         entryId: 'test-entry',
-        kind: 'summary',
-        content: 'Draft note',
+        entryVersion: 1,
+        body: 'Draft note',
+        uncertainty: 'Origins are disputed.',
+        model: 'claude-opus-5-5',
+        promptVersion: 'context-note-v1',
+        status: 'draft',
         createdAt: new Date(),
+        updatedAt: new Date(),
       })
     ).toBeTruthy();
+
+    expect(
+      aiNoteSchema.safeParse({
+        id: '00000000-0000-4000-8000-000000000003',
+        entryId: 'test-entry',
+        entryVersion: 1,
+        body: 'Published without a date',
+        uncertainty: 'Origins are disputed.',
+        model: 'claude-opus-5-5',
+        promptVersion: 'context-note-v1',
+        status: 'published',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }).success
+    ).toBe(false);
 
     expect(
       visitorSchema.parse({

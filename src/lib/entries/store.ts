@@ -105,6 +105,11 @@ export function createEntryStore(db: Db) {
       return Object.fromEntries(rows.map((row) => [row._id, row.count]));
     },
 
+    async getForAdmin(id: string): Promise<PublicEntry | null> {
+      const doc = await entries.findOne({ id });
+      return doc ? (parsePublicEntryDocs([doc])[0] ?? null) : null;
+    },
+
     async listAllForAdmin(): Promise<PublicEntry[]> {
       return parsePublicEntryDocs(await entries.find({}).sort({ updatedAt: -1, id: 1 }).toArray());
     },

@@ -73,6 +73,11 @@ export async function ensureIndexes(db: ReturnType<MongoClient['db']>) {
   await db.collection('chainEntries').createIndex({ status: 1 }, { name: 'chainEntries_status' });
 
   await db.collection('aiNotes').createIndex({ entryId: 1 }, { name: 'aiNotes_entryId' });
+  await db.collection('aiNotes').createIndex(
+    { entryId: 1, status: 1 },
+    { unique: true, partialFilterExpression: { status: 'published' }, name: 'aiNotes_one_published_per_entry' }
+  );
+  await db.collection('aiNotes').createIndex({ status: 1, createdAt: -1 }, { name: 'aiNotes_status_createdAt' });
 
   await db.collection('rateLimits').createIndex(
     { expiresAt: 1 },
