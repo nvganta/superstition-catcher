@@ -1,7 +1,7 @@
 import type { Db, Filter, Document } from 'mongodb';
 import { getDb } from '@/lib/mongodb';
 import type { Category } from '@/lib/schema/category';
-import type { Region } from '@/lib/schema/common';
+import type { EntryOrigin, Region } from '@/lib/schema/common';
 import { postCommunityEntry } from './community';
 import { createCuratedEntry, updateEntry } from './curated';
 import { parseCategoryDocs, parsePublicEntryDocs, type PublicEntry } from './documents';
@@ -22,6 +22,17 @@ export interface LiveFilter {
   excludeIds?: string[];
 }
 
+export interface PageFilter {
+  region?: Region;
+  categorySlug?: string;
+  origin?: EntryOrigin;
+}
+
+export interface LivePage {
+  entries: PublicEntry[];
+  total: number;
+}
+
 export function createEntryStore(db: Db) {
   const entries = db.collection('entries');
 
@@ -33,6 +44,22 @@ export function createEntryStore(db: Db) {
       if (filter.ids) query.id = { $in: filter.ids };
       else if (filter.excludeIds?.length) query.id = { $nin: filter.excludeIds };
       return parsePublicEntryDocs(await entries.find(query).sort({ createdAt: -1, id: 1 }).toArray());
+    },
+
+    async pageLive(filter: PageFilter, page: { offset: number; limit: number }): Promise<LivePage> {
+      const query: Filter<Document> = { ...LIVE };
+      if (filter.region) query.region = filter.region;
+      if (filter.categorySlug) query.categorySlugs = filter.categorySlug;
+      if (filter.origin) query.origin = filter.origin;
+      const [docs, total] = await Promise.all([
+        entries.find(query).sort({ createdAt: -1, id: 1 }).skip(page.offset).limit(page.limit).toArray(),
+        entries.countDocuments(query),
+      ]);
+      return { entries: parsePublicEntryDocs(docs), total };
+    },
+
+    async liveIds(): Promise<string[]> {
+      return (await entries.distinct('id', LIVE)) as string[];
     },
 
     async getLive(id: string): Promise<PublicEntry | null> {
