@@ -26,12 +26,12 @@ Shift from myth-busting to a **living record of cultural drift** — traditions 
 - [x] Search/index on new entry fields
 - [x] Delete legacy `/api/superstitions*`, `/api/submissions`, `/api/seed`
 
-## Wave 3 — Community features
+## Wave 3 — Community features ✅
 
-- [ ] Flags collection wired to moderation queue
-- [ ] Broken Chain (`chainEntries`) go-live UI
-- [ ] Reactions redesign (`rate` | `save` | `hide`)
-- [ ] `flagCount` / status transitions
+- [x] Flags collection wired to moderation queue
+- [x] Broken Chain (`chainEntries`) go-live UI
+- [x] Reactions redesign (`rate` | `save` | `hide`)
+- [x] `flagCount` / status transitions
 
 ## Wave 4 — Intelligence + API
 
