@@ -34,6 +34,8 @@ Central document. Stable slug `id` preserves legacy superstition ids (e.g. `lemo
 
 **Validation:** Curated entries require `confidence` and (≥1 source **or** `legacy`). Community entries do not.
 
+**Writes (Wave 2):** community posts are inserted `live` at version 1. Admin edits are optimistic on `version`: the edit must name the current version, the entry is replaced with `version + 1`, and the new version is snapshotted to `entryVersions`.
+
 ## EntryVersion
 
 | Field | Type |
@@ -157,3 +159,5 @@ Unique on `(entryId, visitorId)`.
 ## Indexes
 
 See `scripts/ensure-indexes.ts`. All index creation is idempotent.
+
+`entries` carries `entries_text`, a text index over `title` (weight 10), `tags` and `country` (5), `theDefault` (3), and `whyItStarted`, `whyItStuck`, `whatsChangedSince`, `freshLook` (1). Search requires it.
