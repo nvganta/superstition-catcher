@@ -19,7 +19,6 @@ export type SlurLocale = 'en' | 'hi' | 'te';
 
 interface SlurLocaleList {
   terms: readonly SlurTerm[];
-  /** See foldIndicSpelling. */
   foldSpelling: boolean;
 }
 

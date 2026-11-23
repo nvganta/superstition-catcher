@@ -7,8 +7,8 @@ import type { AiNoteProvider } from './provider';
 /** A failure whose message is safe to show an admin. */
 export class AiNoteProviderError extends Error {}
 
-export const AI_NOTE_MODEL = 'claude-opus-5-5';
-export const AI_NOTE_PROMPT_VERSION = 'context-note-v1';
+const AI_NOTE_MODEL = 'claude-opus-5-5';
+const AI_NOTE_PROMPT_VERSION = 'context-note-v1';
 
 const noteOutputSchema = z.object({
   body: z.string(),

@@ -21,7 +21,7 @@ const LOOPBACK_MONGO_URI = /^mongodb:\/\/(?:[^@/]*@)?(?:127\.0\.0\.1|localhost|\
  * only when the database is on this machine and Vercel does not call the deployment production,
  * since `next start` sets NODE_ENV to production even on a laptop.
  */
-export function stubProviderAllowed(env: NodeJS.ProcessEnv): boolean {
+function stubProviderAllowed(env: NodeJS.ProcessEnv): boolean {
   return (
     env.AI_NOTES_PROVIDER === 'stub' &&
     env.VERCEL_ENV !== 'production' &&

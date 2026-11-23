@@ -12,7 +12,7 @@ export const aiNoteEventSchema = z.enum(['publish', 'discard', 'unpublish']);
 
 export type AiNoteEvent = z.infer<typeof aiNoteEventSchema>;
 
-export const AI_NOTE_LIMITS = { body: 2000, uncertainty: 600 } as const;
+const AI_NOTE_LIMITS = { body: 2000, uncertainty: 600 } as const;
 
 const aiNoteBaseSchema = z.object({
   id: z.string().uuid(),

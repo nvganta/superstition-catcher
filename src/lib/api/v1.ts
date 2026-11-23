@@ -5,8 +5,8 @@ import type { Category } from '@/lib/schema/category';
 import { entryOriginSchema, regionSchema, type Source } from '@/lib/schema/common';
 import { issuesFrom } from '@/lib/entries/results';
 
-export const DEFAULT_PAGE_SIZE = 20;
-export const MAX_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -27,15 +27,13 @@ const pageNumber = (fallback: number, max?: number) =>
 const optional = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => (value === null || value === '' ? undefined : value), schema.optional());
 
-export const entryListQuerySchema = z.object({
+const entryListQuerySchema = z.object({
   region: optional(regionSchema),
   category: optional(z.string().min(1).max(64)),
   origin: optional(entryOriginSchema),
   page: pageNumber(1),
   limit: pageNumber(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE),
 });
-
-export type EntryListQuery = z.infer<typeof entryListQuerySchema>;
 
 export function parseEntryListQuery(params: URLSearchParams) {
   return entryListQuerySchema.safeParse({

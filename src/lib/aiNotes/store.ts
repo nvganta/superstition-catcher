@@ -4,7 +4,7 @@ import { getDb } from '@/lib/mongodb';
 import { aiNoteSchema, type AiNote, type AiNoteEvent } from '@/lib/schema/aiNote';
 import { AiNoteProviderError } from './anthropic';
 import { AI_NOTE_TRANSITIONS, EVENT_TIMESTAMP } from './lifecycle';
-import { resolveAiNoteProvider, type AiNoteProvider } from './provider';
+import { resolveAiNoteProvider, type AiNoteProvider, type DraftedNote } from './provider';
 
 export type GenerateNoteResult =
   | { kind: 'created'; note: AiNote }
@@ -57,7 +57,7 @@ export function createAiNoteStore(db: Db, provider: AiNoteProvider | null) {
       const entry = await entryStore.getForAdmin(entryId);
       if (!entry || entry.status === 'removed') return { kind: 'notFound' };
 
-      let drafted;
+      let drafted: DraftedNote;
       try {
         drafted = await provider.draft(entry);
       } catch (error) {
