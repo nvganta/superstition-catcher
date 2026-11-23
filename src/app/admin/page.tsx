@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Category } from '@/lib/schema/category';
-import type { Confidence, EntryStatus, Region, Source, SourceKind } from '@/lib/schema/common';
+import type { Confidence, EntryStatus, Region, SourceKind } from '@/lib/schema/common';
 import type { Entry } from '@/lib/schema/entry';
 import type { FieldIssue } from '@/lib/entries/results';
 import {
@@ -82,7 +82,7 @@ function draftFromEntry(entry: AdminEntry): Draft {
     freshLook: entry.freshLook ?? '',
     confidence: entry.confidence ?? '',
     uncertaintyNote: entry.uncertaintyNote ?? '',
-    sources: entry.sources.map((source: Source) => ({ ...source, url: source.url ?? '' })),
+    sources: entry.sources.map((source) => ({ ...source, url: source.url ?? '' })),
     postedBy: entry.postedBy ?? '',
     status: entry.status,
   };
@@ -151,6 +151,7 @@ export default function AdminPage() {
     setEditing(next);
     setMessage('');
     setIssues([]);
+    window.scrollTo({ top: 0 });
   }
 
   function updateDraft(patch: Partial<Draft>) {
@@ -187,6 +188,7 @@ export default function AdminPage() {
             : `Saved "${data.entry.title}" as version ${data.entry.version}`
         );
         setEditing(null);
+        window.scrollTo({ top: 0 });
         fetchEntries();
       } else {
         setMessage(data.message ?? data.error ?? 'Save failed');

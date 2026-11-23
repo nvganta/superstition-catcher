@@ -101,11 +101,12 @@ describe('admin entry routes', () => {
 
   it('returns 400 with the schema message when confidence is missing', async () => {
     process.env.ADMIN_PASSWORD = 'test-admin-secret';
-    const { confidence, ...withoutConfidence } = curated;
-    void confidence;
-
     const res = await POST(
-      request('/api/admin/entries', { method: 'POST', password: 'test-admin-secret', body: { ...withoutConfidence, title: 'No confidence' } })
+      request('/api/admin/entries', {
+        method: 'POST',
+        password: 'test-admin-secret',
+        body: { ...curated, confidence: undefined, title: 'No confidence' },
+      })
     );
 
     expect(res.status).toBe(400);
