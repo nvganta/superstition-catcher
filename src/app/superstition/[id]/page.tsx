@@ -7,6 +7,7 @@ import OriginBadge from '@/components/OriginBadge';
 import EntryCard from '@/components/EntryCard';
 import EntryReactions from '@/components/EntryReactions';
 import BrokenChain from '@/components/BrokenChain';
+import FlagButton from '@/components/FlagButton';
 import Comments from '@/components/Comments';
 import { getReactionStore } from '@/lib/reactions/store';
 import { currentVisitorId } from '@/lib/visitorSession';
@@ -87,7 +88,10 @@ export default async function EntryDetailPage({ params }: { params: Promise<{ id
           ))}
         </div>
 
-        <p className="text-xs text-ink/40">{postedLine(entry)}</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-ink/40">{postedLine(entry)}</p>
+          <FlagButton targetType="entry" targetId={entry.id} label="Report this entry" />
+        </div>
       </div>
 
       <div className="space-y-6">
