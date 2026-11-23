@@ -1,10 +1,32 @@
 import { MongoClient } from 'mongodb';
-import { assertSafeMongoUri, DB_NAME } from '../src/lib/db/safeMongo';
+import { assertSafeMongoUri, DB_NAME, MONGO_CLIENT_OPTIONS } from '../src/lib/db/safeMongo';
 
 export async function ensureIndexes(db: ReturnType<MongoClient['db']>) {
   await db.collection('entries').createIndex({ id: 1 }, { unique: true, name: 'entries_id_unique' });
   await db.collection('entries').createIndex({ categorySlugs: 1 }, { name: 'entries_categorySlugs' });
   await db.collection('entries').createIndex({ status: 1 }, { name: 'entries_status' });
+  await db
+    .collection('entries')
+    .createIndex({ status: 1, createdAt: -1 }, { name: 'entries_status_createdAt' });
+  await db
+    .collection('entries')
+    .createIndex({ postedByVisitorId: 1, createdAt: -1 }, { name: 'entries_postedByVisitorId_createdAt' });
+  await db.collection('entries').createIndex(
+    {
+      title: 'text',
+      tags: 'text',
+      country: 'text',
+      theDefault: 'text',
+      whyItStarted: 'text',
+      whyItStuck: 'text',
+      whatsChangedSince: 'text',
+      freshLook: 'text',
+    },
+    {
+      name: 'entries_text',
+      weights: { title: 10, tags: 5, country: 5, theDefault: 3 },
+    }
+  );
 
   await db
     .collection('entryVersions')
@@ -45,7 +67,7 @@ async function main() {
   const uri = process.env.MONGODB_URI;
   assertSafeMongoUri(uri, 'ensure-indexes');
 
-  const client = new MongoClient(uri);
+  const client = new MongoClient(uri, MONGO_CLIENT_OPTIONS);
   await client.connect();
 
   try {
