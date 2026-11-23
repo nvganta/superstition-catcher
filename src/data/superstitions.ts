@@ -1,7 +1,6 @@
 /**
- * Static seed data for the legacy superstition catalog (43 curated entries).
- * The MongoDB `entries` collection is the runtime source of truth after Wave 1 migration.
- * Site read paths still use this file until Wave 2 switches them to the database.
+ * Static seed for the original superstition catalog. Only scripts/migrate-entries.ts reads it;
+ * the app reads the MongoDB `entries` collection.
  */
 export type Verdict = 'busted' | 'hasMerit' | 'practicalOrigin';
 
@@ -30,52 +29,6 @@ export interface Superstition {
   verdict: Verdict;
   funFact?: string;
 }
-
-export const regionLabels: Record<Region, string> = {
-  india: 'India',
-  japan: 'Japan',
-  china: 'China',
-  middleEast: 'Middle East',
-  europe: 'Europe',
-  americas: 'Americas',
-  africa: 'Africa',
-};
-
-export const regionEmojis: Record<Region, string> = {
-  india: '🇮🇳',
-  japan: '🇯🇵',
-  china: '🇨🇳',
-  middleEast: '🕌',
-  europe: '🏰',
-  americas: '🗽',
-  africa: '🌍',
-};
-
-export const categoryLabels: Record<Category, string> = {
-  numbers: 'Numbers',
-  animals: 'Animals',
-  foodAndEating: 'Food & Eating',
-  deathAndAfterlife: 'Death & Afterlife',
-  marriageAndLove: 'Marriage & Love',
-  homeAndDaily: 'Home & Daily Life',
-  travelAndJourney: 'Travel & Journey',
-};
-
-export const categoryEmojis: Record<Category, string> = {
-  numbers: '🔢',
-  animals: '🐾',
-  foodAndEating: '🍽️',
-  deathAndAfterlife: '💀',
-  marriageAndLove: '💍',
-  homeAndDaily: '🏠',
-  travelAndJourney: '🧳',
-};
-
-export const verdictLabels: Record<Verdict, string> = {
-  busted: 'BUSTED',
-  hasMerit: 'HAS MERIT',
-  practicalOrigin: 'PRACTICAL ORIGIN',
-};
 
 export const superstitions: Superstition[] = [
   // ============ INDIA ============
@@ -910,28 +863,3 @@ export const superstitions: Superstition[] = [
       'The word "salary" comes from Latin salarium; "salad" from sal; and "worth his salt" from Petronius. Leonardo da Vinci gave the superstition perfect visual branding in The Last Supper — history\'s most famous spilled condiment.',
   },
 ];
-
-export function getSuperstitionById(id: string): Superstition | undefined {
-  return superstitions.find((s) => s.id === id);
-}
-
-export function getSuperstitionsByRegion(region: Region): Superstition[] {
-  return superstitions.filter((s) => s.region === region);
-}
-
-export function getSuperstitionsByCategory(category: Category): Superstition[] {
-  return superstitions.filter((s) => s.category === category);
-}
-
-export function searchSuperstitions(query: string): Superstition[] {
-  const q = query.toLowerCase();
-  return superstitions.filter(
-    (s) =>
-      s.title.toLowerCase().includes(q) ||
-      s.country.toLowerCase().includes(q) ||
-      s.whatPeopleBelieve.toLowerCase().includes(q) ||
-      s.theRealReason.toLowerCase().includes(q) ||
-      s.historicalOrigin.toLowerCase().includes(q) ||
-      s.modernTwist.toLowerCase().includes(q)
-  );
-}
