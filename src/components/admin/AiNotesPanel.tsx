@@ -39,7 +39,7 @@ export default function AiNotesPanel({
   const [message, setMessage] = useState('');
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/admin/entries/${entryId}/notes`, { headers: { 'x-admin-password': password } });
+    const res = await fetch(`/api/admin/entries/${encodeURIComponent(entryId)}/notes`, { headers: { 'x-admin-password': password } });
     if (!res.ok) {
       setMessage('Could not load AI notes.');
       return;
@@ -70,7 +70,7 @@ export default function AiNotesPanel({
 
   function generate() {
     run(
-      fetch(`/api/admin/entries/${entryId}/notes`, { method: 'POST', headers: { 'x-admin-password': password } }),
+      fetch(`/api/admin/entries/${encodeURIComponent(entryId)}/notes`, { method: 'POST', headers: { 'x-admin-password': password } }),
       'Draft generated. Read it before publishing.'
     );
   }

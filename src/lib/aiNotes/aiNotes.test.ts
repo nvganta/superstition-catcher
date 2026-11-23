@@ -65,9 +65,32 @@ describe('AI notes', () => {
     expect(published).toMatchObject({ kind: 'changed', note: { status: 'published', publishedAt: now } });
     expect(await store.publishedFor(CURATED_ENTRY)).toMatchObject({ body: first.note.body, model: 'test-model' });
 
-    await store.apply(second.note.id, 'publish', now);
+    await store.apply(second.note.id, 'publish', new Date(now.getTime() + 1000));
     const statuses = Object.fromEntries((await store.listForEntry(CURATED_ENTRY)).map((note) => [note.id, note.status]));
     expect(statuses).toEqual({ [first.note.id]: 'archived', [second.note.id]: 'published' });
+    expect(await store.publishedFor(CURATED_ENTRY)).toMatchObject({ body: second.note.body });
+  });
+
+  it('leaves exactly one published note when two admins publish at the same moment', async () => {
+    const store = createAiNoteStore(mongo.db, provider());
+    const drafts = await Promise.all([store.generate(CURATED_ENTRY, now), store.generate(CURATED_ENTRY, now)]);
+    const ids = drafts.map((draft) => (draft.kind === 'created' ? draft.note.id : ''));
+
+    await Promise.all(ids.map((id) => store.apply(id, 'publish', now)));
+    const published = (await store.listForEntry(CURATED_ENTRY)).filter((note) => note.status === 'published');
+    expect(published).toHaveLength(1);
+  });
+
+  it('keeps the published note when a publish is refused', async () => {
+    const store = createAiNoteStore(mongo.db, provider());
+    const live = await store.generate(CURATED_ENTRY, now);
+    const draft = await store.generate(CURATED_ENTRY, now);
+    if (live.kind !== 'created' || draft.kind !== 'created') throw new Error('generate failed');
+    await store.apply(live.note.id, 'publish', now);
+
+    await store.apply(draft.note.id, 'discard', now);
+    expect(await store.apply(draft.note.id, 'publish', now)).toMatchObject({ kind: 'refused' });
+    expect(await store.publishedFor(CURATED_ENTRY)).toMatchObject({ body: live.note.body });
   });
 
   it('refuses changes the note lifecycle does not allow', async () => {

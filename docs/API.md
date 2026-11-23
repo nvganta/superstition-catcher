@@ -1,6 +1,6 @@
 # Public data API (v1)
 
-Read-only JSON over HTTPS. No key needed. Every route answers `GET` and a CORS preflight (`OPTIONS`), sends `Access-Control-Allow-Origin: *`, and is cached for 60 seconds in browsers and 5 minutes at the CDN (`Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=600`). Errors are not cached.
+Read-only JSON over HTTPS. No key needed. Every route answers `GET` and a CORS preflight (`OPTIONS`), sends `Access-Control-Allow-Origin: *`, and is cached for 30 seconds in browsers and a minute at the CDN (`Cache-Control: public, max-age=30, s-maxage=60, stale-while-revalidate=60`), so an entry taken down by moderation leaves the API within about two minutes. Errors are not cached.
 
 Only live entries appear. The API never returns visitor ids, flags, moderation status, AI notes or the legacy migration fields.
 

@@ -87,7 +87,7 @@ describe('GET /api/v1/entries', () => {
   it('allows cross-origin reads and sets a cache lifetime', async () => {
     const response = await listEntries(get('/api/v1/entries'));
     expect(response.headers.get('access-control-allow-origin')).toBe('*');
-    expect(response.headers.get('cache-control')).toContain('s-maxage=300');
+    expect(response.headers.get('cache-control')).toContain('s-maxage=60');
 
     const preflight = OPTIONS();
     expect(preflight.status).toBe(204);

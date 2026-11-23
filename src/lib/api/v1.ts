@@ -15,8 +15,8 @@ const CORS_HEADERS = {
   'Access-Control-Max-Age': '86400',
 };
 
-/** Fresh for a minute in browsers and five at the CDN, which also absorbs most repeat traffic. */
-const CACHE_HEADERS = { 'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600' };
+/** Short enough that a moderation takedown leaves the CDN within about two minutes. */
+const CACHE_HEADERS = { 'Cache-Control': 'public, max-age=30, s-maxage=60, stale-while-revalidate=60' };
 
 const pageNumber = (fallback: number, max?: number) =>
   z.preprocess(

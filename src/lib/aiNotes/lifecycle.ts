@@ -1,6 +1,6 @@
 import type { AiNoteEvent, AiNoteStatus } from '@/lib/schema/aiNote';
 
-/** Every allowed note change. An entry shows at most one published note, enforced by a partial unique index. */
+/** Every allowed note change. Publishing a note archives the entry's earlier published note. */
 export const AI_NOTE_TRANSITIONS: Record<AiNoteStatus, Partial<Record<AiNoteEvent, AiNoteStatus>>> = {
   draft: { publish: 'published', discard: 'archived' },
   published: { unpublish: 'archived' },

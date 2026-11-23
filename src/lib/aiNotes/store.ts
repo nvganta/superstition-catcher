@@ -1,6 +1,5 @@
 import type { Db, Document } from 'mongodb';
 import { createEntryStore } from '@/lib/entries/store';
-import { isDuplicateKeyError } from '@/lib/entries/documents';
 import { getDb } from '@/lib/mongodb';
 import { aiNoteSchema, type AiNote, type AiNoteEvent } from '@/lib/schema/aiNote';
 import { AiNoteProviderError } from './anthropic';
@@ -19,6 +18,18 @@ export type NoteEventResult =
   | { kind: 'refused'; message: string };
 
 export type PublicAiNote = Pick<AiNote, 'body' | 'uncertainty' | 'model' | 'entryVersion'> & { publishedAt: Date };
+
+/**
+ * The newest publish wins. Each publish archives only notes published before it, so two admins
+ * publishing at once still converge on one note, and a publish that fails archives nothing.
+ */
+const NEWEST_PUBLISHED = { publishedAt: -1, id: -1 } as const;
+
+function olderThan(note: { id: string; publishedAt: Date }): Document {
+  return {
+    $or: [{ publishedAt: { $lt: note.publishedAt } }, { publishedAt: note.publishedAt, id: { $lt: note.id } }],
+  };
+}
 
 function parseNoteDocs(docs: Document[]): AiNote[] {
   return docs.flatMap((doc) => {
@@ -91,33 +102,28 @@ export function createAiNoteStore(db: Db, provider: AiNoteProvider | null) {
       const to = AI_NOTE_TRANSITIONS[note.status][event];
       if (!to) return { kind: 'refused', message: `A ${note.status} note cannot be changed that way.` };
 
-      if (event === 'publish') {
+      const updated = await notes.findOneAndUpdate(
+        { id: noteId, status: note.status },
+        { $set: { status: to, [EVENT_TIMESTAMP[event]]: now, updatedAt: now } },
+        { returnDocument: 'after' }
+      );
+      const [changed] = updated ? parseNoteDocs([updated]) : [];
+      if (!changed) {
+        return { kind: 'refused', message: 'This note changed in the meantime. Reload and try again.' };
+      }
+      if (changed.status === 'published') {
         await notes.updateMany(
-          { entryId: note.entryId, status: 'published' },
+          { entryId: changed.entryId, status: 'published', ...olderThan(changed) },
           { $set: { status: 'archived', archivedAt: now, updatedAt: now } }
         );
       }
-
-      try {
-        const updated = await notes.findOneAndUpdate(
-          { id: noteId, status: note.status },
-          { $set: { status: to, [EVENT_TIMESTAMP[event]]: now, updatedAt: now } },
-          { returnDocument: 'after' }
-        );
-        const [changed] = updated ? parseNoteDocs([updated]) : [];
-        return changed
-          ? { kind: 'changed', note: changed }
-          : { kind: 'refused', message: 'This note changed in the meantime. Reload and try again.' };
-      } catch (error) {
-        if (isDuplicateKeyError(error)) {
-          return { kind: 'refused', message: 'Another note on this entry was published at the same time. Reload and try again.' };
-        }
-        throw error;
-      }
+      return { kind: 'changed', note: changed };
     },
 
     async publishedFor(entryId: string): Promise<PublicAiNote | null> {
-      const [note] = parseNoteDocs(await notes.find({ entryId, status: 'published' }).limit(1).toArray());
+      const [note] = parseNoteDocs(
+        await notes.find({ entryId, status: 'published' }).sort(NEWEST_PUBLISHED).limit(1).toArray()
+      );
       if (!note || note.status !== 'published') return null;
       const { body, uncertainty, model, entryVersion, publishedAt } = note;
       return { body, uncertainty, model, entryVersion, publishedAt };
