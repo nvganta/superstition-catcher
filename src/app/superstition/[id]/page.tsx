@@ -5,8 +5,10 @@ import { getEntryStore } from '@/lib/entries/store';
 import { categoryLabelMap, confidenceLabels, sourceKindLabels } from '@/lib/entries/labels';
 import OriginBadge from '@/components/OriginBadge';
 import EntryCard from '@/components/EntryCard';
-import Reactions from '@/components/Reactions';
+import EntryReactions from '@/components/EntryReactions';
 import Comments from '@/components/Comments';
+import { getReactionStore } from '@/lib/reactions/store';
+import { currentVisitorId } from '@/lib/visitorSession';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,12 +32,13 @@ function postedLine(entry: PublicEntry): string {
 
 export default async function EntryDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const store = await getEntryStore();
+  const [store, reactions, visitorId] = await Promise.all([getEntryStore(), getReactionStore(), currentVisitorId()]);
   const entry = await store.getLive(id);
   if (!entry) {
     notFound();
   }
-  const [related, categories] = await Promise.all([store.listRelated(entry), store.listCategories()]);
+  const hidden = await reactions.hiddenEntryIds(visitorId);
+  const [related, categories] = await Promise.all([store.listRelated(entry, hidden), store.listCategories()]);
   const categoryLabels = categoryLabelMap(categories);
   const confidence = entry.confidence ? confidenceLabels[entry.confidence] : null;
 
@@ -182,7 +185,7 @@ export default async function EntryDetailPage({ params }: { params: Promise<{ id
           <h2 className="font-display text-base tracking-tight text-ink">YOUR TAKE</h2>
           <div className="flex-grow h-px bg-ink/10" />
         </div>
-        <Reactions superstitionId={entry.id} />
+        <EntryReactions entryId={entry.id} />
       </section>
 
       <section className="mt-10">

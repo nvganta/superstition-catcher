@@ -47,9 +47,3 @@ export function ensureVisitorCookie(): 'present' | 'restored' | 'created' {
   if (fromCookie) return 'present';
   return stored ? 'restored' : 'created';
 }
-
-export function getVisitorId(): string {
-  if (typeof window === 'undefined') return '';
-  ensureVisitorCookie();
-  return readCookie() ?? '';
-}

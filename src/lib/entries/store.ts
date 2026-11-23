@@ -15,14 +15,23 @@ function escapeRegex(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+export interface LiveFilter {
+  region?: Region;
+  categorySlug?: string;
+  ids?: string[];
+  excludeIds?: string[];
+}
+
 export function createEntryStore(db: Db) {
   const entries = db.collection('entries');
 
   return {
-    async listLive(filter: { region?: Region; categorySlug?: string } = {}): Promise<PublicEntry[]> {
+    async listLive(filter: LiveFilter = {}): Promise<PublicEntry[]> {
       const query: Filter<Document> = { ...LIVE };
       if (filter.region) query.region = filter.region;
       if (filter.categorySlug) query.categorySlugs = filter.categorySlug;
+      if (filter.ids) query.id = { $in: filter.ids };
+      else if (filter.excludeIds?.length) query.id = { $nin: filter.excludeIds };
       return parsePublicEntryDocs(await entries.find(query).sort({ createdAt: -1, id: 1 }).toArray());
     },
 
@@ -68,11 +77,11 @@ export function createEntryStore(db: Db) {
       return parsePublicEntryDocs(docs)[0] ?? null;
     },
 
-    async listRelated(entry: PublicEntry, limit = 3): Promise<PublicEntry[]> {
+    async listRelated(entry: PublicEntry, excludeIds: string[] = [], limit = 3): Promise<PublicEntry[]> {
       const docs = await entries
         .find({
           ...LIVE,
-          id: { $ne: entry.id },
+          id: { $nin: [entry.id, ...excludeIds] },
           $or: [{ categorySlugs: { $in: entry.categorySlugs } }, { region: entry.region }],
         })
         .sort({ createdAt: -1, id: 1 })

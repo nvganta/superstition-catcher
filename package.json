@@ -14,6 +14,8 @@
     "ensure-indexes": "tsx scripts/ensure-indexes.ts",
     "migrate-entries": "tsx scripts/migrate-entries.ts",
     "migrate-entries:dry-run": "tsx scripts/migrate-entries.ts --dry-run",
+    "migrate-reactions": "tsx scripts/migrate-reactions.ts",
+    "migrate-reactions:dry-run": "tsx scripts/migrate-reactions.ts --dry-run",
     "seed:categories": "tsx scripts/seed-categories.ts"
   },
   "dependencies": {

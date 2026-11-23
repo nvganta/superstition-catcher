@@ -64,6 +64,7 @@ export async function ensureIndexes(db: ReturnType<MongoClient['db']>) {
     { entryId: 1, visitorId: 1, kind: 1 },
     { unique: true, name: 'reactions_entry_visitor_kind_unique' }
   );
+  await db.collection('reactions').createIndex({ visitorId: 1, kind: 1 }, { name: 'reactions_visitor_kind' });
 
   await db.collection('chainEntries').createIndex(
     { entryId: 1, visitorId: 1 },
