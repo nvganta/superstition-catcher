@@ -6,6 +6,7 @@ import { categoryLabelMap, confidenceLabels, sourceKindLabels } from '@/lib/entr
 import OriginBadge from '@/components/OriginBadge';
 import EntryCard from '@/components/EntryCard';
 import EntryReactions from '@/components/EntryReactions';
+import BrokenChain from '@/components/BrokenChain';
 import Comments from '@/components/Comments';
 import { getReactionStore } from '@/lib/reactions/store';
 import { currentVisitorId } from '@/lib/visitorSession';
@@ -186,6 +187,16 @@ export default async function EntryDetailPage({ params }: { params: Promise<{ id
           <div className="flex-grow h-px bg-ink/10" />
         </div>
         <EntryReactions entryId={entry.id} />
+      </section>
+
+      <section className="mt-10">
+        <hr className="case-divider mb-8" />
+        <div className="flex items-center gap-3 mb-5">
+          <span className="text-xl">⛓️</span>
+          <h2 className="font-display text-base tracking-tight text-ink">THE BROKEN CHAIN</h2>
+          <div className="flex-grow h-px bg-ink/10" />
+        </div>
+        <BrokenChain entryId={entry.id} />
       </section>
 
       <section className="mt-10">
