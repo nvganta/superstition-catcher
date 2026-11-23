@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
+import { toPublicEntry } from './documents';
 import type { EntryWriteResult } from './results';
 
 export function writeResultResponse(result: EntryWriteResult): NextResponse {
   switch (result.kind) {
     case 'created':
-      return NextResponse.json({ entry: result.entry }, { status: 201 });
+      return NextResponse.json({ entry: toPublicEntry(result.entry) }, { status: 201 });
     case 'saved':
-      return NextResponse.json({ entry: result.entry });
+      return NextResponse.json({ entry: toPublicEntry(result.entry) });
     case 'invalid':
       return NextResponse.json(
         { error: 'invalid', message: 'Some fields need attention.', issues: result.issues },

@@ -47,9 +47,11 @@ const placeFields = {
   region: regionSchema,
   postedBy: optionalText(FIELD_LIMITS.postedBy),
 };
+export const visitorIdSchema = z.string().uuid('Missing visitor id; reload the page and try again');
+
 
 export const communityEntryInputSchema = z.object({
-  visitorId: z.string().uuid('Missing visitor id; reload the page and try again'),
+  visitorId: visitorIdSchema,
   ...placeFields,
   countryFlag: optionalText(8),
   categorySlugs: z

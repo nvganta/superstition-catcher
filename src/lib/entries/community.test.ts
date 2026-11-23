@@ -59,8 +59,8 @@ describe('community entry posting', () => {
       postedBy: 'Asha',
       theDefault: 'Sweeping after dark sweeps the household luck out of the door.',
     });
-    const admin = (await store.listAllForAdmin()).find((entry) => entry.id === result.entry.id);
-    expect(admin?.postedByVisitorId).toBe(visitorId);
+    expect(await mongo.db.collection('entries').findOne({ id: result.entry.id })).toMatchObject({ postedByVisitorId: visitorId });
+    expect(JSON.stringify(await store.listAllForAdmin())).not.toContain(visitorId);
     expect((await store.search('oil lamps')).map((entry) => entry.id)).toContain(result.entry.id);
 
     const snapshot = await mongo.db.collection('entryVersions').findOne({ entryId: result.entry.id });

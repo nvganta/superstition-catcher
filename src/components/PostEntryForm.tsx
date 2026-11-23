@@ -6,7 +6,7 @@ import type { Category } from '@/lib/schema/category';
 import type { Region, SourceKind } from '@/lib/schema/common';
 import type { FieldIssue } from '@/lib/entries/results';
 import { REGIONS, categoryEmoji, regionLabels, sourceKindLabels } from '@/lib/entries/labels';
-import { getVisitorId } from '@/lib/visitorId';
+import { ensureVisitorCookie } from '@/lib/visitorId';
 
 const MAX_CATEGORIES = 3;
 
@@ -132,10 +132,11 @@ export default function PostEntryForm({ categories }: { categories: Category[] }
     const sources = sourceTitle.trim() ? [{ title: sourceTitle, url: sourceUrl, kind: sourceKind }] : [];
 
     try {
+      ensureVisitorCookie();
       const res = await fetch('/api/entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...fields, sources, visitorId: getVisitorId() }),
+        body: JSON.stringify({ ...fields, sources }),
       });
       const data = await res.json();
 

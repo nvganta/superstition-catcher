@@ -2,10 +2,9 @@ import type { Db, Filter, Document } from 'mongodb';
 import { getDb } from '@/lib/mongodb';
 import type { Category } from '@/lib/schema/category';
 import type { Region } from '@/lib/schema/common';
-import type { Entry } from '@/lib/schema/entry';
 import { postCommunityEntry } from './community';
 import { createCuratedEntry, updateEntry } from './curated';
-import { parseCategoryDocs, parseEntryDocs, parsePublicEntryDocs, type PublicEntry } from './documents';
+import { parseCategoryDocs, parsePublicEntryDocs, type PublicEntry } from './documents';
 
 const LIVE = { status: 'live' } as const;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -97,8 +96,8 @@ export function createEntryStore(db: Db) {
       return Object.fromEntries(rows.map((row) => [row._id, row.count]));
     },
 
-    async listAllForAdmin(): Promise<Entry[]> {
-      return parseEntryDocs(await entries.find({}).sort({ updatedAt: -1, id: 1 }).toArray());
+    async listAllForAdmin(): Promise<PublicEntry[]> {
+      return parsePublicEntryDocs(await entries.find({}).sort({ updatedAt: -1, id: 1 }).toArray());
     },
 
     postCommunity: (raw: unknown, now?: Date) => postCommunityEntry(db, raw, now),

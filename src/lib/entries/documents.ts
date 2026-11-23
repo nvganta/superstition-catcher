@@ -17,12 +17,14 @@ export function parseEntryDocs(docs: Document[]): Entry[] {
 /** What anyone can see. postedByVisitorId is the poster's only credential, so it never leaves the server. */
 export type PublicEntry = Omit<Entry, 'postedByVisitorId'>;
 
+export function toPublicEntry(entry: Entry): PublicEntry {
+  const publicEntry: PublicEntry & { postedByVisitorId?: string } = { ...entry };
+  delete publicEntry.postedByVisitorId;
+  return publicEntry;
+}
+
 export function parsePublicEntryDocs(docs: Document[]): PublicEntry[] {
-  return parseEntryDocs(docs).map((entry) => {
-    const publicEntry: PublicEntry & { postedByVisitorId?: string } = { ...entry };
-    delete publicEntry.postedByVisitorId;
-    return publicEntry;
-  });
+  return parseEntryDocs(docs).map(toPublicEntry);
 }
 
 export function parseCategoryDocs(docs: Document[]): Category[] {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEntryStore } from '@/lib/entries/store';
 import { badJsonResponse, writeResultResponse } from '@/lib/entries/http';
+import { withVisitor } from '@/lib/visitorSession';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const store = await getEntryStore();
-    return writeResultResponse(await store.postCommunity(body));
+    return writeResultResponse(await store.postCommunity(withVisitor(request, body)));
   } catch (error) {
     console.error('POST /api/entries error:', error);
     return NextResponse.json({ error: 'Failed to post entry' }, { status: 500 });

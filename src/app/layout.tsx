@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import PostEntryButton from '@/components/PostEntryButton';
+import VisitorCookieSync from '@/components/VisitorCookieSync';
 import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
@@ -37,6 +38,7 @@ export default function RootLayout({
           </div>
         </footer>
         <PostEntryButton />
+        <VisitorCookieSync />
         <Analytics />
       </body>
     </html>
