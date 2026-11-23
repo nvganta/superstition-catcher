@@ -29,6 +29,26 @@ describe('checkContent guardrails', () => {
     expect(result.matches.some((match) => match.rule === 'phone')).toBe(true);
   });
 
+  it('does not mistake year ranges for phone numbers', () => {
+    const result = checkContent({
+      contentType: 'entry',
+      fields: {
+        whyItStarted: 'The custom spread between 1600-1700, then again in 1947 1950.',
+      },
+    });
+
+    expect(result.result).toBe('passed');
+  });
+
+  it('holds ten-digit local phone numbers', () => {
+    const result = checkContent({
+      contentType: 'entry',
+      fields: { whyItStuck: 'My uncle at 555-123-4567 knows the story' },
+    });
+
+    expect(result.result).toBe('heldForEdit');
+  });
+
   it('blocks slurs including leetspeak variants', () => {
     const result = checkContent({
       contentType: 'entry',

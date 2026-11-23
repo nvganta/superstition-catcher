@@ -1,5 +1,5 @@
 import { FIELD_LIMITS, trimField, type GuardrailField } from './limits';
-import { EMAIL_PATTERN, PHONE_PATTERN } from './patterns';
+import { EMAIL_PATTERN, containsPhoneNumber } from './patterns';
 import { findSlurMatches, type SlurMatch } from './slurs';
 import { findSpamMatches, type SpamMatch } from './spam';
 
@@ -69,7 +69,7 @@ function findPiiMatches(text: string, field: string): GuardrailMatch[] {
     });
   }
 
-  if (PHONE_PATTERN.test(text)) {
+  if (containsPhoneNumber(text)) {
     matches.push({
       rule: 'phone',
       field,
