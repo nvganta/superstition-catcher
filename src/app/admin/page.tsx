@@ -7,6 +7,7 @@ import type { Entry } from '@/lib/schema/entry';
 import type { FieldIssue } from '@/lib/entries/results';
 import ModerationPanel from '@/components/admin/ModerationPanel';
 import AiNotesPanel from '@/components/admin/AiNotesPanel';
+import EditorialDashboard from '@/components/admin/EditorialDashboard';
 import {
   REGIONS,
   categoryEmoji,
@@ -42,6 +43,10 @@ interface Draft {
   sources: SourceDraft[];
   postedBy: string;
 }
+
+const TABS = { dashboard: 'Dashboard', entries: 'Entries', moderation: 'Moderation' } as const;
+
+type AdminTab = keyof typeof TABS;
 
 type Editing = { mode: 'create'; draft: Draft } | { mode: 'edit'; entry: AdminEntry; draft: Draft };
 
@@ -109,7 +114,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [issues, setIssues] = useState<FieldIssue[]>([]);
-  const [tab, setTab] = useState<'entries' | 'moderation'>('entries');
+  const [tab, setTab] = useState<AdminTab>('dashboard');
 
   const fetchEntries = useCallback(async () => {
     const res = await fetch('/api/admin/entries', { headers: { 'x-admin-password': password } });
@@ -150,6 +155,11 @@ export default function AdminPage() {
     setMessage('');
     setIssues([]);
     window.scrollTo({ top: 0 });
+  }
+
+  function openEntry(id: string) {
+    const entry = entries.find((candidate) => candidate.id === id);
+    if (entry) startEditing({ mode: 'edit', entry, draft: draftFromEntry(entry) });
   }
 
   function updateDraft(patch: Partial<Draft>) {
@@ -479,7 +489,7 @@ export default function AdminPage() {
       </div>
 
       <div className="flex gap-2 mb-6" role="tablist" aria-label="Admin sections">
-        {(['entries', 'moderation'] as const).map((name) => (
+        {(Object.keys(TABS) as AdminTab[]).map((name) => (
           <button
             key={name}
             type="button"
@@ -490,7 +500,7 @@ export default function AdminPage() {
               tab === name ? 'bg-ink text-cream' : 'bg-ink/5 text-ink/60 hover:bg-ink/10'
             }`}
           >
-            {name === 'entries' ? 'Entries' : 'Moderation'}
+            {TABS[name]}
           </button>
         ))}
       </div>
@@ -499,7 +509,13 @@ export default function AdminPage() {
         <div className="paper-card rounded-lg p-3 mb-6 text-sm text-amber-dark font-medium">{message}</div>
       )}
 
-      {tab === 'moderation' ? (
+      {tab === 'dashboard' ? (
+        <EditorialDashboard
+          password={password}
+          onOpenEntry={openEntry}
+          onOpenModeration={() => setTab('moderation')}
+        />
+      ) : tab === 'moderation' ? (
         <ModerationPanel password={password} />
       ) : entries.length === 0 ? (
         <div className="text-center py-20">
