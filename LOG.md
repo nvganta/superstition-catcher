@@ -21,12 +21,13 @@
 
 ### Checks run
 
-`npm run typecheck`, `npm run lint`, `npm test` (71 tests, most against a disposable mongod), `npm run build`, and a headless browser pass over every surface against `dev:local`.
+`npm run typecheck`, `npm run lint`, `npm test` (74 tests, most against a disposable mongod), `npm run build`, and a headless browser pass over every surface against the production build, with data from `dev:local`.
 
 ### Not in Wave 2
 
 - Old `submissions` documents are no longer shown anywhere. They stay in the database untouched.
-- The rate limit trusts the client's localStorage visitor id, so a determined poster can reset it. IP-level limiting is a follow-up.
+- The rate limit trusts the client's localStorage visitor id, so a determined poster can reset it, and its check-then-record is not atomic. IP-level, atomic limiting is a follow-up.
+- The setup scripts refuse Atlas URIs by design, so preparing the production database (indexes, categories, migration) needs a deliberate owner decision on how to run them.
 - Flags, Broken Chain, reactions redesign, AI notes, data API (Waves 3 and 4).
 
 ## 2026-09-30 — Wave 1: Data model foundation
