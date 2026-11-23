@@ -33,12 +33,12 @@ Shift from myth-busting to a **living record of cultural drift** — traditions 
 - [x] Reactions redesign (`rate` | `save` | `hide`)
 - [x] `flagCount` / status transitions
 
-## Wave 4 — Intelligence + API
+## Wave 4 — Intelligence + API ✅
 
-- [ ] AI notes (Anthropic SDK) on entries
-- [ ] Public data API
-- [ ] Editorial dashboard for migration flags + review queue
-- [ ] Multi-locale slur lists
+- [x] AI notes (Anthropic SDK) on entries
+- [x] Public data API
+- [x] Editorial dashboard for migration flags + review queue
+- [x] Multi-locale slur lists
 
 ---
 

@@ -57,6 +57,14 @@ The legacy `/api/superstitions*`, `/api/submissions` and `/api/seed` routes were
 
 `checkContent(fields)` returns `passed`, `heldForEdit` (PII), or `blocked` (slurs, spam). Rate limits live in the `rateLimits` collection with daily caps and a 30s minimum interval. `POST /api/entries` runs both, keyed on the visitor id from localStorage.
 
+Slur lists are a registry keyed by locale (`en`, `hi`, `te`) in `src/lib/guardrails/slurs.ts`. Each term matches as a whole word or anywhere in the squeezed text. Text is NFKC-normalized with invisible joiners, nukta and candrabindu variants folded, and Hindi and Telugu also fold romanized vowel spellings and Devanagari vowel length. A match reports its locale only.
+
+## Wave 4 surfaces
+
+- **AI notes** (`src/lib/aiNotes/`): a provider interface with an Anthropic implementation and a local stub. Admin routes generate drafts and move them through `AI_NOTE_TRANSITIONS`. The entry page renders the published note in its own labelled frame.
+- **Public API** (`src/app/api/v1/`): read-only, CORS for GET, short CDN cache. See `docs/API.md`.
+- **Editorial dashboard** (`src/lib/editorial/dashboard.ts`): a table of checks read against the entries, plus AI drafts and moderation counts, on the first tab of `/admin`.
+
 ## Migration
 
 `scripts/migrate-entries.ts` inserts static + legacy DB superstitions into `entries` and writes `entryVersions` v1. It never overwrites an existing entry, so rerunning it after admin edits is safe.
