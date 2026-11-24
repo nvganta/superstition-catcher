@@ -20,8 +20,10 @@ export type NoteEventResult =
 export type PublicAiNote = Pick<AiNote, 'body' | 'uncertainty' | 'model' | 'entryVersion'> & { publishedAt: Date };
 
 /**
- * The newest publish wins. Each publish archives only notes published before it, so two admins
- * publishing at once still converge on one note, and a publish that fails archives nothing.
+ * The newest publish wins. After its own write, each publish archives every published note older
+ * than the newest one it can see, not just the notes older than itself. Whichever publish runs
+ * this step last sees both notes, so two admins publishing at once still converge on one note,
+ * and a publish that fails archives nothing.
  */
 const NEWEST_PUBLISHED = { publishedAt: -1, id: -1 } as const;
 
@@ -112,10 +114,15 @@ export function createAiNoteStore(db: Db, provider: AiNoteProvider | null) {
         return { kind: 'refused', message: 'This note changed in the meantime. Reload and try again.' };
       }
       if (changed.status === 'published') {
-        await notes.updateMany(
-          { entryId: changed.entryId, status: 'published', ...olderThan(changed) },
-          { $set: { status: 'archived', archivedAt: now, updatedAt: now } }
+        const [newest] = parseNoteDocs(
+          await notes.find({ entryId: changed.entryId, status: 'published' }).sort(NEWEST_PUBLISHED).limit(1).toArray()
         );
+        if (newest && newest.status === 'published') {
+          await notes.updateMany(
+            { entryId: changed.entryId, status: 'published', ...olderThan(newest) },
+            { $set: { status: 'archived', archivedAt: now, updatedAt: now } }
+          );
+        }
       }
       return { kind: 'changed', note: changed };
     },

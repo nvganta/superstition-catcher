@@ -81,6 +81,20 @@ describe('AI notes', () => {
     expect(published).toHaveLength(1);
   });
 
+  it('leaves one published note when the later publish in the same millisecond has the lower id', async () => {
+    const store = createAiNoteStore(mongo.db, provider());
+    const drafts = await Promise.all([store.generate(CURATED_ENTRY, now), store.generate(CURATED_ENTRY, now)]);
+    const [lower, higher] = drafts.map((draft) => (draft.kind === 'created' ? draft.note.id : '')).sort();
+
+    // The order a concurrent pair can land in: the higher id finishes first, then the lower id
+    // publishes with the same timestamp and is not newer than it.
+    await store.apply(higher, 'publish', now);
+    await store.apply(lower, 'publish', now);
+
+    const published = (await store.listForEntry(CURATED_ENTRY)).filter((note) => note.status === 'published');
+    expect(published.map((note) => note.id)).toEqual([higher]);
+  });
+
   it('keeps the published note when a publish is refused', async () => {
     const store = createAiNoteStore(mongo.db, provider());
     const live = await store.generate(CURATED_ENTRY, now);
