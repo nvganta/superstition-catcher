@@ -172,14 +172,29 @@ The browser keeps its visitor id in the `sb-visitor-id` cookie (carried over fro
 
 ## AiNote (Wave 4)
 
-| Field | Type |
-|-------|------|
-| `id` | uuid |
-| `entryId` | string |
-| `kind` | `summary`, `sourceSuggestion`, `editorialHint`, `freshLookDraft` |
-| `content` | string |
-| `model` | string? |
-| `createdAt`, `updatedAt?` | Date |
+A short AI-written context note on an entry, kept apart from the entry's own sourced content.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | uuid | |
+| `entryId` | string | |
+| `entryVersion` | number | Entry version the note was written from. The page says so when the entry has moved on. |
+| `body` | string | Max 2000. The prompt forbids naming or inventing sources. |
+| `uncertainty` | string | Max 600. What is unsure or disputed. Required. |
+| `model` | string | The model that answered, which a server-side fallback can change. `stub` for the local stub. |
+| `promptVersion` | string | `context-note-v1` |
+| `status` | `draft`, `published`, `archived` | |
+| `publishedAt` | Date | Required when `published`, kept when archived after publishing |
+| `archivedAt` | Date | Required when `archived` |
+| `createdAt`, `updatedAt` | Date | |
+
+| From | Event | To |
+|------|-------|----|
+| `draft` | `publish` | `published` |
+| `draft` | `discard` | `archived` |
+| `published` | `unpublish` | `archived` |
+
+A publish first claims its draft, then archives the entry's notes published before it, so the newest publish wins and two admins publishing at once still leave one. Only `published` notes on `live` entries reach a page; the public API does not carry notes.
 
 ## Visitor
 

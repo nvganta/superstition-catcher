@@ -1,5 +1,38 @@
 # Development Log
 
+## 2026-11-23: Wave 4, intelligence and API
+
+### Built
+
+- **AI context notes** (`src/lib/aiNotes/`): in the entry editor an admin generates a short context note with Claude Opus 5.5 through the Anthropic SDK (structured output, server-side refusal fallback, medium effort). Notes are drafts until published, and a lifecycle table allows publish, discard and unpublish. Each note stores the model that answered, the prompt version, the entry version it was written from, and timestamps. The prompt forbids naming or inventing sources and requires an uncertainty statement. A published note renders on the entry page in a dashed frame labelled AI-generated, after the sourced sections, and says it cites nothing.
+- **Not configured**: without `ANTHROPIC_API_KEY` the panel says so and `POST /api/admin/entries/:id/notes` answers 503 `notConfigured`. Nothing else changes.
+- **Stub provider**: `AI_NOTES_PROVIDER=stub` writes canned notes with no API call. It runs only when `MONGODB_URI` is a loopback address and `VERCEL_ENV` is not `production`, and when refused it does not fall back to a real key. NODE_ENV cannot be the gate, since `next start` sets it to production locally.
+- **Public data API** (`/api/v1/entries`, `/api/v1/entries/:id`, `/api/v1/categories`, `/api/v1/chain`): read-only, live entries only, region, category, origin and page/limit filters, Broken Chain tallies per entry and overall by region and generation. Entries are mapped field by field, so no visitor id, flag, status, legacy field or AI note leaves. CORS for GET, 30s browser and 60s CDN cache. `docs/API.md` has examples.
+- **Editorial dashboard**: the first tab of `/admin`. It lists migrated entries whose "why it stuck" still holds the old practical explanation (the same six the migration report flags) and whose categories are still the automatic mapping, entries with no sources or no confidence, AI note drafts awaiting review, and moderation counts with a link into the Moderation tab. The checks read the entries themselves, so an entry leaves a list once an editor fixes it.
+- **Slur lists by locale**: English, Hindi and Telugu tables in a registry. Matching handles Devanagari and Telugu script (NFKC, invisible joiners, nukta, candrabindu, long and short vowels) and folds romanized Hindi and Telugu spellings. A match reports only its locale.
+
+### Fixed along the way
+
+- A slur match carried the matched term in its `field`, one step from being echoed to a poster.
+- Short English terms matched inside ordinary words, so "suspicious", "spice" and "fire retardant" were blocked. They now match whole words only; the allowlist that never ran is gone.
+
+### Review
+
+One independent review of the full diff. Fixed: leetspeak at a word's edge ("$pic") slipped past, "retarded" and "niggaz" were no longer caught, short-vowel and inflected Devanagari forms passed, and publishing a note archived the live note before the publish succeeded (a lost race left the entry with no note). A publish now claims its draft first and archives only older notes, so concurrent publishes converge on one. The API cache was shortened so a takedown leaves the CDN within about two minutes.
+
+### Checks run
+
+`npm run typecheck`, `npm run lint`, `npm test` (160 tests, most against a disposable mongod, with a stub provider or a fake `fetch` for every AI note test), `npm run build`, and a 20-check headless Playwright run against `next start` on a fresh `dev:local` database with the stub provider: generate, draft hidden from the public page, publish, labelled note on the entry page, dashboard with the draft, link into moderation, `/api/v1/entries?region=india&limit=5` and one entry with no private fields, a Devanagari slur rejected without echo, and the entry page at 390px with no horizontal scroll. No paid API call was made.
+
+### Not in Wave 4
+
+- No per-IP rate limit on `/api/v1`. The CDN cache absorbs repeats; a Vercel Firewall rate-limit rule on `/api/v1/*` is the cheap production fix.
+- The Telugu and Hindi lists need a native speaker's review before they grow. Telugu terms inside longer words are not caught on purpose until then.
+- `anywhere` terms still match across word and field boundaries once whitespace is squeezed out ("much utiya"). Low impact today.
+- Admins cannot edit a draft note's text before publishing; they regenerate or discard.
+- Generating a note has no throttle. It is admin-only, but each click is a paid call once a key is set.
+- The public API does not carry published AI notes.
+
 ## 2026-11-23: Wave 3, community features
 
 ### Built

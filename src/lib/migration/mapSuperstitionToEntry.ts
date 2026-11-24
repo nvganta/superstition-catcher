@@ -49,7 +49,7 @@ export interface MappedEntryResult {
   editorialFlag?: MigrationEditorialFlag;
 }
 
-function shouldFlagWhyItStuckForReview(theRealReason: string): boolean {
+export function shouldFlagWhyItStuckForReview(theRealReason: string): boolean {
   const lower = theRealReason.toLowerCase();
   const hasPractical = PRACTICAL_KEYWORDS.some((word) => lower.includes(word));
   const hasCultural = CULTURAL_KEYWORDS.some((word) => lower.includes(word));

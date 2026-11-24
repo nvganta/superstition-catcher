@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkContent } from './checkContent';
-import { findSlurMatches, SLUR_FALSE_POSITIVE_ALLOWLIST } from './slurs';
+import { findSlurMatches } from './slurs';
 import { trimField } from './limits';
 
 describe('checkContent guardrails', () => {
@@ -61,10 +61,9 @@ describe('checkContent guardrails', () => {
     expect(result.matches.some((match) => match.rule === 'slur')).toBe(true);
   });
 
-  it('does not block allowlisted place-name false positives', () => {
-    const matches = findSlurMatches('We visited Scunthorpe on our trip');
-    expect(matches).toHaveLength(0);
-    expect(SLUR_FALSE_POSITIVE_ALLOWLIST.has('scunthorpe')).toBe(true);
+  it('does not block place names or ordinary words that contain a short term', () => {
+    expect(findSlurMatches('We visited Scunthorpe on our trip')).toEqual([]);
+    expect(findSlurMatches('A suspicious spice merchant sold fire retardant by the river Niger')).toEqual([]);
   });
 
   it('blocks links in chain stories', () => {

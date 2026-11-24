@@ -9,6 +9,8 @@ import EntryReactions from '@/components/EntryReactions';
 import BrokenChain from '@/components/BrokenChain';
 import FlagButton from '@/components/FlagButton';
 import Comments from '@/components/Comments';
+import AiContextNote from '@/components/AiContextNote';
+import { getPublishedAiNote } from '@/lib/aiNotes/store';
 import { getReactionStore } from '@/lib/reactions/store';
 import { currentVisitorId } from '@/lib/visitorSession';
 
@@ -40,7 +42,11 @@ export default async function EntryDetailPage({ params }: { params: Promise<{ id
     notFound();
   }
   const hidden = await reactions.hiddenEntryIds(visitorId);
-  const [related, categories] = await Promise.all([store.listRelated(entry, hidden), store.listCategories()]);
+  const [related, categories, aiNote] = await Promise.all([
+    store.listRelated(entry, hidden),
+    store.listCategories(),
+    getPublishedAiNote(entry.id),
+  ]);
   const categoryLabels = categoryLabelMap(categories);
   const confidence = entry.confidence ? confidenceLabels[entry.confidence] : null;
 
@@ -181,6 +187,8 @@ export default async function EntryDetailPage({ params }: { params: Promise<{ id
             </div>
           </section>
         )}
+
+        {aiNote && <AiContextNote note={aiNote} entryVersion={entry.version} />}
       </div>
 
       <section className="mt-10">

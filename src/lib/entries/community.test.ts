@@ -128,6 +128,10 @@ describe('community entry posting', () => {
     if (result.kind !== 'rejected') return;
     expect(result.guardrail).toBe('blocked');
     expect(JSON.stringify(result.issues)).not.toMatch(/n1gg3r|nigger/i);
+
+    const hindi = await store.postCommunity(post({ whyItStuck: 'गाँव में उसे रंडी कहकर डराते थे' }), start);
+    expect(hindi).toMatchObject({ kind: 'rejected', guardrail: 'blocked' });
+    expect(JSON.stringify(hindi)).not.toContain('रंडी');
     expect(await mongo.db.collection('entries').countDocuments()).toBe(0);
   });
 

@@ -81,10 +81,9 @@ function findPiiMatches(text: string, field: string): GuardrailMatch[] {
 }
 
 function slurMatchesToGuardrail(matches: SlurMatch[]): GuardrailMatch[] {
-  return matches.map((match) => ({
+  return matches.map(() => ({
     rule: 'slur',
     message: 'Content contains language that is not allowed.',
-    field: match.term,
   }));
 }
 

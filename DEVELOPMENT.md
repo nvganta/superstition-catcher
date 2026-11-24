@@ -56,3 +56,9 @@ For local integration against real `mongod`, set `MONGODB_URI` and run migration
 ## Admin
 
 `ADMIN_PASSWORD` protects `/admin` and `/api/admin/*`. A missing or empty value rejects every login. Do not point these at production data.
+
+## AI notes
+
+`ANTHROPIC_API_KEY` is optional. With it, an admin can generate a context note for an entry (Claude Opus 5.5, one request per click, paid). Without it, the AI note panel says notes are not configured and nothing else changes.
+
+To try the flow without a key or a paid call, start `AI_NOTES_PROVIDER=stub npm run dev:local`. The stub writes canned text and is refused unless `MONGODB_URI` points at `localhost`, `127.0.0.1` or `[::1]` and `VERCEL_ENV` is not `production`. When refused it does not fall back to a real key.

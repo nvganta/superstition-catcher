@@ -41,7 +41,7 @@ function postBody(entry: GuardedFields): string {
 function guardrailIssues(matches: GuardrailMatch[]): FieldIssue[] {
   const seen = new Set<string>();
   return matches.flatMap((match) => {
-    const issue = { field: match.rule === 'slur' ? undefined : match.field, message: match.message };
+    const issue = { field: match.field, message: match.message };
     const key = `${issue.field}|${issue.message}`;
     if (seen.has(key)) {
       return [];

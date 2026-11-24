@@ -15,6 +15,17 @@ import { chainOutcome, emptyTally, type ChainTally } from './tally';
 const blankToUndefined = (value: unknown) => (value === '' ? undefined : value);
 const PREVIOUS_STORIES_COMPARED = 5;
 const STORIES_SHOWN = 50;
+const UNSPECIFIED = 'unspecified';
+
+type TallyDimension = 'region' | 'generationBand';
+
+export interface PublicChainTallies {
+  answers: number;
+  tally: ChainTally;
+  /** Keyed by region or generation, with `unspecified` for answers that gave none. */
+  byRegion: Record<string, ChainTally>;
+  byGeneration: Record<string, ChainTally>;
+}
 
 export const chainAnswerInputSchema = z.object({
   visitorId: visitorIdSchema,
@@ -97,14 +108,31 @@ export function createChainStore(db: Db) {
   const chainEntries = db.collection('chainEntries');
   const entryStore = createEntryStore(db);
 
+  async function tallies(match: Document, by?: TallyDimension): Promise<Map<string, ChainTally>> {
+    const rows = await chainEntries
+      .aggregate<{ _id: { key: string | null; passedDown: boolean; kept: boolean }; count: number }>([
+        { $match: { ...match, passedDown: { $type: 'bool' }, kept: { $type: 'bool' } } },
+        {
+          $group: {
+            _id: { key: by ? `$${by}` : null, passedDown: '$passedDown', kept: '$kept' },
+            count: { $sum: 1 },
+          },
+        },
+      ])
+      .toArray();
+    const byKey = new Map<string, ChainTally>();
+    for (const row of rows) {
+      const key = row._id.key ?? UNSPECIFIED;
+      const tally = byKey.get(key) ?? emptyTally();
+      tally[chainOutcome(row._id.passedDown, row._id.kept)] += row.count;
+      byKey.set(key, tally);
+    }
+    return byKey;
+  }
+
   async function tallyAndStories(entryId: string, visitorId: string | null): Promise<ChainView> {
-    const [cells, storyDocs, mineDoc] = await Promise.all([
-      chainEntries
-        .aggregate<{ _id: { passedDown: boolean; kept: boolean }; count: number }>([
-          { $match: { entryId, passedDown: { $type: 'bool' }, kept: { $type: 'bool' } } },
-          { $group: { _id: { passedDown: '$passedDown', kept: '$kept' }, count: { $sum: 1 } } },
-        ])
-        .toArray(),
+    const [tally, storyDocs, mineDoc] = await Promise.all([
+      tallyFor(entryId),
       chainEntries
         .find({ entryId, status: 'live', story: { $exists: true } })
         .sort({ updatedAt: -1 })
@@ -113,10 +141,6 @@ export function createChainStore(db: Db) {
       visitorId ? chainEntries.findOne({ entryId, visitorId }) : null,
     ]);
 
-    const tally = emptyTally();
-    for (const cell of cells) {
-      tally[chainOutcome(cell._id.passedDown, cell._id.kept)] += cell.count;
-    }
     const stories = parseChainDocs(storyDocs).flatMap((chain) =>
       chain.story ? [toPublicStory({ ...chain, story: chain.story })] : []
     );
@@ -131,6 +155,27 @@ export function createChainStore(db: Db) {
   async function view(entryId: string, visitorId: string | null): Promise<ChainView | null> {
     if (!(await entryStore.getLive(entryId))) return null;
     return tallyAndStories(entryId, visitorId);
+  }
+
+  /** Every answer under every live entry, overall and by the answerer's region and generation. */
+  async function publicTallies(): Promise<PublicChainTallies> {
+    const match = { entryId: { $in: await entryStore.liveIds() } };
+    const [overall, byRegion, byGeneration] = await Promise.all([
+      tallies(match),
+      tallies(match, 'region'),
+      tallies(match, 'generationBand'),
+    ]);
+    const tally = overall.get(UNSPECIFIED) ?? emptyTally();
+    return {
+      answers: Object.values(tally).reduce((sum, count) => sum + count, 0),
+      tally,
+      byRegion: Object.fromEntries(byRegion),
+      byGeneration: Object.fromEntries(byGeneration),
+    };
+  }
+
+  async function tallyFor(entryId: string): Promise<ChainTally> {
+    return (await tallies({ entryId })).get(UNSPECIFIED) ?? emptyTally();
   }
 
   async function answer(raw: unknown, now = new Date()): Promise<ChainResult> {
@@ -200,7 +245,7 @@ export function createChainStore(db: Db) {
     return { kind: 'saved', view: await tallyAndStories(entryId, visitorId) };
   }
 
-  return { view, answer };
+  return { view, answer, publicTallies, tallyFor };
 }
 
 export type ChainStore = ReturnType<typeof createChainStore>;
