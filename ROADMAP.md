@@ -6,7 +6,7 @@ Shift from myth-busting to a **living record of cultural drift** — traditions 
 
 ---
 
-## Wave 1 — Data model ✅ (this branch)
+## Wave 1 — Data model ✅
 
 - [x] Zod schemas for all core collections
 - [x] Category taxonomy + mapping from legacy 7 categories
@@ -18,12 +18,13 @@ Shift from myth-busting to a **living record of cultural drift** — traditions 
 - [x] `GET /api/categories`
 - [x] Tests + docs
 
-## Wave 2 — Read paths + posting
+## Wave 2 — Read paths + posting ✅
 
-- [ ] Switch pages/API from `superstitions.ts` to `entries` collection
-- [ ] Community entry POST (instant live) with guardrails + rate limits
-- [ ] Curated entry admin flow with confidence + sources requirement
-- [ ] Search/index on new entry fields
+- [x] Switch pages/API from `superstitions.ts` to `entries` collection
+- [x] Community entry POST (instant live) with guardrails + rate limits
+- [x] Curated entry admin flow with confidence + sources requirement
+- [x] Search/index on new entry fields
+- [x] Delete legacy `/api/superstitions*`, `/api/submissions`, `/api/seed`
 
 ## Wave 3 — Community features
 

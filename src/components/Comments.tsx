@@ -16,6 +16,7 @@ export default function Comments({ superstitionId }: { superstitionId: string })
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -48,11 +49,16 @@ export default function Comments({ superstitionId }: { superstitionId: string })
       if (res.ok) {
         setName('');
         setText('');
+        setError(null);
         setShowForm(false);
         fetchComments();
+      } else {
+        const data = await res.json().catch(() => null);
+        setError(data?.message ?? 'Your comment could not be posted. Try again.');
       }
     } catch (err) {
       console.error('Failed to post comment:', err);
+      setError('Your comment could not be posted. Try again.');
     } finally {
       setSubmitting(false);
     }
@@ -113,6 +119,11 @@ export default function Comments({ superstitionId }: { superstitionId: string })
               required
             />
           </div>
+          {error && (
+            <p role="alert" className="mb-3 text-sm text-coral">
+              {error}
+            </p>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-xs text-ink/30">{text.length}/1000</span>
             <button

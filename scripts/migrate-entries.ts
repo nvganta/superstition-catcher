@@ -1,6 +1,6 @@
 import { MongoClient } from 'mongodb';
 import { superstitions, type Superstition } from '../src/data/superstitions';
-import { assertSafeMongoUri, DB_NAME } from '../src/lib/db/safeMongo';
+import { assertSafeMongoUri, DB_NAME, MONGO_CLIENT_OPTIONS } from '../src/lib/db/safeMongo';
 import { entrySchema } from '../src/lib/schema/entry';
 import { entryVersionSchema } from '../src/lib/schema/entryVersion';
 import {
@@ -72,11 +72,11 @@ export async function migrateEntries(
     if (!dryRun) {
       const result = await entriesCollection.updateOne(
         { id: parsedEntry.id },
-        { $set: parsedEntry },
+        { $setOnInsert: parsedEntry },
         { upsert: true }
       );
 
-      if (result.upsertedCount > 0 || result.modifiedCount > 0) {
+      if (result.upsertedCount > 0) {
         upserted += 1;
       }
 
@@ -89,11 +89,11 @@ export async function migrateEntries(
 
       const versionResult = await versionsCollection.updateOne(
         { entryId: versionDoc.entryId, version: versionDoc.version },
-        { $set: versionDoc },
+        { $setOnInsert: versionDoc },
         { upsert: true }
       );
 
-      if (versionResult.upsertedCount > 0 || versionResult.modifiedCount > 0) {
+      if (versionResult.upsertedCount > 0) {
         versionsWritten += 1;
       }
     } else {
@@ -118,7 +118,7 @@ async function main() {
   const uri = process.env.MONGODB_URI;
   assertSafeMongoUri(uri, 'migrate-entries');
 
-  const client = new MongoClient(uri);
+  const client = new MongoClient(uri, MONGO_CLIENT_OPTIONS);
   await client.connect();
 
   try {
