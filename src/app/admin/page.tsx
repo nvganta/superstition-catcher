@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Category } from '@/lib/schema/category';
-import type { Confidence, EntryStatus, Region, SourceKind } from '@/lib/schema/common';
+import type { Confidence, Region, SourceKind } from '@/lib/schema/common';
 import type { Entry } from '@/lib/schema/entry';
 import type { FieldIssue } from '@/lib/entries/results';
+import ModerationPanel from '@/components/admin/ModerationPanel';
 import {
   REGIONS,
   categoryEmoji,
@@ -39,12 +40,9 @@ interface Draft {
   uncertaintyNote: string;
   sources: SourceDraft[];
   postedBy: string;
-  status: EntryStatus;
 }
 
 type Editing = { mode: 'create'; draft: Draft } | { mode: 'edit'; entry: AdminEntry; draft: Draft };
-
-const STATUSES: EntryStatus[] = ['live', 'flagged', 'underReview', 'hidden', 'removed'];
 
 const emptyDraft: Draft = {
   id: '',
@@ -63,7 +61,6 @@ const emptyDraft: Draft = {
   uncertaintyNote: '',
   sources: [{ title: '', url: '', kind: 'book' }],
   postedBy: '',
-  status: 'live',
 };
 
 function draftFromEntry(entry: AdminEntry): Draft {
@@ -84,7 +81,6 @@ function draftFromEntry(entry: AdminEntry): Draft {
     uncertaintyNote: entry.uncertaintyNote ?? '',
     sources: entry.sources.map((source) => ({ ...source, url: source.url ?? '' })),
     postedBy: entry.postedBy ?? '',
-    status: entry.status,
   };
 }
 
@@ -112,6 +108,7 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [issues, setIssues] = useState<FieldIssue[]>([]);
+  const [tab, setTab] = useState<'entries' | 'moderation'>('entries');
 
   const fetchEntries = useCallback(async () => {
     const res = await fetch('/api/admin/entries', { headers: { 'x-admin-password': password } });
@@ -342,42 +339,23 @@ export default function AdminPage() {
             onChange={(freshLook) => updateDraft({ freshLook })}
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="admin-confidence" className={labelClass}>
-                Confidence {editing.mode === 'create' || editing.entry.origin === 'curated' ? '*' : ''}
-              </label>
-              <select
-                id="admin-confidence"
-                value={draft.confidence}
-                onChange={(e) => updateDraft({ confidence: e.target.value as Confidence | '' })}
-                className={inputClass}
-              >
-                <option value="">Not set</option>
-                {(Object.keys(confidenceLabels) as Confidence[]).map((confidence) => (
-                  <option key={confidence} value={confidence}>
-                    {confidenceLabels[confidence].label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="admin-status" className={labelClass}>
-                Status
-              </label>
-              <select
-                id="admin-status"
-                value={draft.status}
-                onChange={(e) => updateDraft({ status: e.target.value as EntryStatus })}
-                className={inputClass}
-              >
-                {STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label htmlFor="admin-confidence" className={labelClass}>
+              Confidence {editing.mode === 'create' || editing.entry.origin === 'curated' ? '*' : ''}
+            </label>
+            <select
+              id="admin-confidence"
+              value={draft.confidence}
+              onChange={(e) => updateDraft({ confidence: e.target.value as Confidence | '' })}
+              className={inputClass}
+            >
+              <option value="">Not set</option>
+              {(Object.keys(confidenceLabels) as Confidence[]).map((confidence) => (
+                <option key={confidence} value={confidence}>
+                  {confidenceLabels[confidence].label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <Field
@@ -495,11 +473,30 @@ export default function AdminPage() {
         </button>
       </div>
 
+      <div className="flex gap-2 mb-6" role="tablist" aria-label="Admin sections">
+        {(['entries', 'moderation'] as const).map((name) => (
+          <button
+            key={name}
+            type="button"
+            role="tab"
+            aria-selected={tab === name}
+            onClick={() => setTab(name)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              tab === name ? 'bg-ink text-cream' : 'bg-ink/5 text-ink/60 hover:bg-ink/10'
+            }`}
+          >
+            {name === 'entries' ? 'Entries' : 'Moderation'}
+          </button>
+        ))}
+      </div>
+
       {message && (
         <div className="paper-card rounded-lg p-3 mb-6 text-sm text-amber-dark font-medium">{message}</div>
       )}
 
-      {entries.length === 0 ? (
+      {tab === 'moderation' ? (
+        <ModerationPanel password={password} />
+      ) : entries.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-4xl mb-3">📭</div>
           <p className="text-ink/40 font-medium">

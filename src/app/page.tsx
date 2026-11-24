@@ -3,17 +3,21 @@ import { categoryLabelMap } from '@/lib/entries/labels';
 import EntryCard from '@/components/EntryCard';
 import EntryFeed from '@/components/EntryFeed';
 import SearchBar from '@/components/SearchBar';
+import { getReactionStore } from '@/lib/reactions/store';
+import { currentVisitorId } from '@/lib/visitorSession';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const store = await getEntryStore();
-  const [entries, daily, categories] = await Promise.all([
-    store.listLive(),
+  const [store, reactions, visitorId] = await Promise.all([getEntryStore(), getReactionStore(), currentVisitorId()]);
+  const hidden = await reactions.hiddenEntryIds(visitorId);
+  const [entries, entryOfTheDay, categories] = await Promise.all([
+    store.listLive({ excludeIds: hidden }),
     store.entryOfTheDay(),
     store.listCategories(),
   ]);
   const categoryLabels = categoryLabelMap(categories);
+  const daily = entryOfTheDay && !hidden.includes(entryOfTheDay.id) ? entryOfTheDay : null;
   const feed = daily ? entries.filter((entry) => entry.id !== daily.id) : entries;
 
   return (

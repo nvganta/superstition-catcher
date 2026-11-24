@@ -14,6 +14,10 @@ export const flagReasonSchema = z.enum([
 
 export type FlagReason = z.infer<typeof flagReasonSchema>;
 
+export const flagResolutionSchema = z.enum(['dismissed', 'upheld']);
+
+export type FlagResolution = z.infer<typeof flagResolutionSchema>;
+
 export const flagSchema = z.object({
   targetType: flagTargetTypeSchema,
   targetId: z.string().min(1).max(120),
@@ -23,6 +27,7 @@ export const flagSchema = z.object({
   note: z.string().max(500).optional(),
   createdAt: z.coerce.date(),
   resolvedAt: z.coerce.date().optional(),
+  resolution: flagResolutionSchema.optional(),
 });
 
 export type Flag = z.infer<typeof flagSchema>;

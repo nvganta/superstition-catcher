@@ -1,5 +1,8 @@
 import type { Category } from '@/lib/schema/category';
-import type { Confidence, EntryOrigin, Region, SourceKind } from '@/lib/schema/common';
+import type { GenerationBand } from '@/lib/schema/chainEntry';
+import type { Confidence, EntryOrigin, EntryStatus, Region, SourceKind } from '@/lib/schema/common';
+import type { FlagReason } from '@/lib/schema/flag';
+import type { StatusEvent } from '@/lib/schema/statusTransition';
 
 export const regionLabels: Record<Region, string> = {
   india: 'India',
@@ -75,3 +78,41 @@ export type CategoryLabels = Record<string, string>;
 export function categoryLabelMap(categories: Category[]): CategoryLabels {
   return Object.fromEntries(categories.map((category) => [category.slug, category.label]));
 }
+
+export const generationBandLabels: Record<GenerationBand, string> = {
+  genZ: 'Gen Z',
+  millennial: 'Millennial',
+  genX: 'Gen X',
+  boomer: 'Boomer',
+  silent: 'Silent generation',
+  unknown: 'Not sure',
+};
+
+export const GENERATION_BANDS = Object.keys(generationBandLabels) as GenerationBand[];
+
+export const flagReasonLabels: Record<FlagReason, string> = {
+  inaccurate: 'It is wrong or misleading',
+  offensive: 'It is hateful or offensive',
+  personalInfo: "It shares someone's personal details",
+  spam: 'It is spam or an ad',
+  other: 'Something else',
+};
+
+export const FLAG_REASONS = Object.keys(flagReasonLabels) as FlagReason[];
+
+export const statusLabels: Record<EntryStatus, string> = {
+  live: 'Live',
+  flagged: 'Flagged',
+  underReview: 'Under review',
+  hidden: 'Hidden',
+  removed: 'Removed',
+};
+
+export const statusEventLabels: Record<StatusEvent, string> = {
+  flagThresholdReached: 'Flag threshold reached',
+  dismissFlags: 'Dismiss reports',
+  startReview: 'Take down for review',
+  restore: 'Restore',
+  hide: 'Hide',
+  remove: 'Remove',
+};

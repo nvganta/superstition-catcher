@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-11-23: Wave 3, community features
+
+### Built
+
+- **Moderation** (`src/lib/moderation/`): one transition table over `live | flagged | underReview | hidden | removed`, applied only by `applyStatusEvent`, which logs actor and time to `statusTransitions`. Two open flags from distinct visitors take a live community entry or chain story off public pages; curated entries only queue. Past 10 automatic takedowns an hour, flags only queue. Admins restore, dismiss reports, review, hide or remove from a new Moderation tab in `/admin`, which also lists recent chain stories.
+- **Broken Chain** (`src/lib/chain/`): on every entry page a visitor answers whether the tradition was handed to them and whether they keep it, with an optional story, region and generation. Answers upsert against the unique `(entryId, visitorId)` index. Stories pass the guardrails, and a new story counts against the chain-story rate limit.
+- **Reactions** (`src/lib/reactions/`): star ratings, save and hide replace the emoji buttons. `/saved` lists saved and hidden entries; hidden entries leave that visitor's home, explore, category and related lists.
+- **Visitor identity**: the visitor id lives in the `sb-visitor-id` cookie (older localStorage ids carry over). Routes read it from the cookie and overwrite any `visitorId` in a body. No public response or page payload carries one, and admin listings no longer do either.
+- **`scripts/migrate-reactions.ts`**: converts old emoji reactions to ratings (mind blown 5, like 4, dislike 2), archives every original in `legacyReactions`, supports `--dry-run`, is rerun-safe, and runs in `dev:local`. `dev:local -- start` serves a production build.
+
+### Fixed along the way
+
+- `POST /api/entries` returned the poster's visitor id in its response.
+- Admin edits could set `status` directly and undo a takedown. Edits now touch content only.
+
+### Checks run
+
+`npm run typecheck`, `npm run lint`, `npm test` (122 tests, most against a disposable mongod), `npm run build`, and a 34-step headless Playwright run against `next start` on a fresh `dev:local` database.
+
+### Not in Wave 3
+
+- Rate limits are still check-then-record and per browser-made visitor id, so parallel requests or fresh ids get past them. The takedown brake caps the damage from flags; atomic and IP-level limits are a follow-up.
+- Legacy comments (`/api/comments`) have no guardrails, moderation or identity.
+- Moderation actor is "admin", not a named person, since admins share one password.
+- Search ignores a visitor's hidden entries by design; hiding shapes feeds, not lookup.
+
 ## 2026-11-23: Wave 2, read paths and posting
 
 ### Built

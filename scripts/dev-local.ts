@@ -5,6 +5,7 @@ import { seedCategories } from '../src/lib/categories/seedCategories';
 import { DB_NAME, MONGO_CLIENT_OPTIONS } from '../src/lib/db/safeMongo';
 import { ensureIndexes } from './ensure-indexes';
 import { migrateEntries } from './migrate-entries';
+import { migrateReactions } from './migrate-reactions';
 
 const LOCAL_ADMIN_PASSWORD = 'local-admin';
 
@@ -12,11 +13,12 @@ async function prepareDatabase(uri: string) {
   const client = await MongoClient.connect(uri, MONGO_CLIENT_OPTIONS);
   try {
     const db = client.db(DB_NAME);
-    await ensureIndexes(db);
     const categories = await seedCategories(db);
-    const report = await migrateEntries(db);
+    const entries = await migrateEntries(db);
+    const reactions = await migrateReactions(db);
+    await ensureIndexes(db);
     console.log(
-      `dev:local: ${categories.upserted} categories, ${report.upserted} entries migrated into ${uri}${DB_NAME}`
+      `dev:local: ${categories.upserted} categories, ${entries.upserted} entries and ${reactions.ratingsCreated} legacy reactions migrated into ${uri}${DB_NAME}`
     );
   } finally {
     await client.close();
@@ -35,7 +37,9 @@ async function main() {
       : `dev:local: admin password is "${LOCAL_ADMIN_PASSWORD}". Data is discarded on exit.`
   );
 
-  const next = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', ...process.argv.slice(2)], {
+  const [first, ...rest] = process.argv.slice(2);
+  const nextArgs = first === 'start' ? ['start', ...rest] : ['dev', ...process.argv.slice(2)];
+  const next = spawn(process.execPath, [require.resolve('next/dist/bin/next'), ...nextArgs], {
     stdio: 'inherit',
     env: { ...process.env, MONGODB_URI: uri, ADMIN_PASSWORD: adminPassword },
   });

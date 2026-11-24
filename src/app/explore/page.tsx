@@ -1,12 +1,15 @@
 import { getEntryStore } from '@/lib/entries/store';
 import { categoryLabelMap } from '@/lib/entries/labels';
 import RegionExplorer from '@/components/RegionExplorer';
+import { getReactionStore } from '@/lib/reactions/store';
+import { currentVisitorId } from '@/lib/visitorSession';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ExplorePage() {
-  const store = await getEntryStore();
-  const [entries, categories] = await Promise.all([store.listLive(), store.listCategories()]);
+  const [store, reactions, visitorId] = await Promise.all([getEntryStore(), getReactionStore(), currentVisitorId()]);
+  const hidden = await reactions.hiddenEntryIds(visitorId);
+  const [entries, categories] = await Promise.all([store.listLive({ excludeIds: hidden }), store.listCategories()]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">

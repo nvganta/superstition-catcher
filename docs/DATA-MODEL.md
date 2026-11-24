@@ -73,51 +73,102 @@ Unique on `(entryId, version)`.
 | `homeAndDaily` | `home` |
 | `travelAndJourney` | `travel` |
 
-## Flag (Wave 3 wiring)
+## Moderation (Wave 3)
+
+Entries and chain stories share one status machine, `STATUS_TRANSITIONS` in `src/lib/moderation/statusMachine.ts`. `applyStatusEvent` is the only code that changes `status`. It refuses any (status, event, actor) the table lacks, updates conditionally on the status it read, and appends a `statusTransitions` record. Admin content edits never touch `status` or `flagCount`.
+
+| From | Event (actor) | To |
+|------|---------------|----|
+| `live` | `flagThresholdReached` (system) | `flagged` |
+| `live` | `dismissFlags` (admin) | `live` |
+| `live`, `flagged` | `startReview` (admin) | `underReview` |
+| `flagged`, `underReview`, `hidden` | `restore` (admin) | `live` |
+| `live`, `flagged`, `underReview` | `hide` (admin) | `hidden` |
+| `live`, `flagged`, `underReview`, `hidden` | `remove` (admin) | `removed` |
+
+`removed` is terminal. Restore and dismiss resolve the target's open flags as `dismissed`; hide and remove resolve them as `upheld`. Public pages and APIs show only `live`, so a `flagged` target leaves public pages at once, and the chain and reactions under an entry that is not live return 404.
+
+`FLAG_THRESHOLD` is 2 open flags from distinct visitors. Reaching it moves a live community entry or chain story to `flagged`. Curated entries were reviewed before going live, so flags queue them for review but never hide them. Past `MAX_SYSTEM_TAKEDOWNS_PER_HOUR` (10) automatic takedowns in an hour, flags only queue targets, so minted visitor ids cannot empty the site. `flagCount` on the target is its open flags, kept by `$inc` on each flag and `-n` when a transition resolves `n`; the threshold itself reads the open flags, not the counter.
+
+## Flag
 
 | Field | Type |
 |-------|------|
 | `targetType` | `entry` \| `chainEntry` |
-| `targetId` | string |
+| `targetId` | string (entry `id` or chain entry `id`) |
 | `entryId` | string |
 | `visitorId` | uuid |
 | `reason` | `inaccurate`, `offensive`, `personalInfo`, `spam`, `other` |
-| `note` | string? |
+| `note` | string? (max 500, admin-only, slurs and spam blocked) |
 | `createdAt` | Date |
 | `resolvedAt` | Date? |
+| `resolution` | `dismissed` \| `upheld`? |
 
-Unique on `(targetType, targetId, visitorId)`.
+Unique on `(targetType, targetId, visitorId, resolvedAt)`, so a visitor holds one open flag per target and can report again once an admin resolves it. Flags have a 20-a-day cap but skip the 30-second posting interval.
 
-## Reaction (Wave 3 wiring)
+## StatusTransition
+
+Append-only log of every status change.
+
+| Field | Type |
+|-------|------|
+| `targetType`, `targetId`, `entryId` | as Flag |
+| `event` | `flagThresholdReached`, `dismissFlags`, `startReview`, `restore`, `hide`, `remove` |
+| `from`, `to` | status |
+| `actor` | `system` \| `admin` |
+| `at` | Date |
+
+## Reaction
+
+One document per (entry, visitor, kind), present only while set. Unsaving, unhiding or clearing a rating deletes it.
 
 | Field | Type |
 |-------|------|
 | `entryId` | string |
 | `visitorId` | uuid |
 | `kind` | `rate` \| `save` \| `hide` |
-| `value` | number \| boolean \| string |
+| `value` | 1 to 5 for `rate`, `true` for `save` and `hide` |
+| `legacyType` | `like` \| `dislike` \| `mind_blown`? (set only by the migration, cleared on re-rate) |
+| `createdAt`, `updatedAt` | Date |
 
-Unique on `(entryId, visitorId, kind)`.
+Unique on `(entryId, visitorId, kind)`. A `hide` drops the entry from that visitor's home, explore, category and related lists. The entry page itself still opens.
+
+### Legacy reaction mapping
+
+`scripts/migrate-reactions.ts` converts the pre-Wave-3 documents (`{ superstitionId, type, visitorId, createdAt }`) in `reactions`:
+
+| Legacy `type` | New reaction |
+|---------------|--------------|
+| `mind_blown` | `rate` 5 |
+| `like` | `rate` 4 |
+| `dislike` | `rate` 2 |
+
+`superstitionId` becomes `entryId` (migrated entries keep their ids). A rating the visitor already set on the new scale wins. Every legacy document, converted or not, is copied to `legacyReactions` and then deleted from `reactions`. Documents whose superstition no longer exists, or with a malformed visitor id, are archived without converting. It must run before `ensure-indexes`, whose unique reactions index cannot be built while one visitor has two legacy documents.
 
 ## ChainEntry
 
-Broken Chain community story.
+One visitor's Broken Chain answer for one entry.
 
 | Field | Type |
 |-------|------|
 | `id` | uuid |
 | `entryId` | string |
 | `visitorId` | uuid |
-| `name` | string |
-| `text` | string (max 2000) |
+| `passedDown` | boolean (was it handed to them) |
+| `kept` | boolean (do they keep it today) |
+| `story` | `{ text (max 2000), name? }`? |
+| `region` | region enum? |
+| `generationBand` | `genZ`, `millennial`, `genX`, `boomer`, `silent`, `unknown`? |
+| `researchConsent` | boolean? |
 | `status` | entry status enum |
 | `flagCount` | number |
-| `region` | region enum? |
-| `generationBand` | enum? |
-| `researchConsent` | boolean? |
 | `createdAt`, `updatedAt` | Date |
 
-Unique on `(entryId, visitorId)`.
+Unique on `(entryId, visitorId)`. Answers are upserts against that index, so a second answer from the same visitor updates the first. Every story change passes the guardrails; a new story also counts against the chain-story rate limit, while rewording your own does not. Moderation status gates the story only: the tally counts every answer, the public story list shows `live` ones, and neither carries `visitorId`.
+
+## Visitor identity
+
+The browser keeps its visitor id in the `sb-visitor-id` cookie (carried over from localStorage for older visitors). Every route reads the visitor from the cookie and ignores any `visitorId` in the body. No public response or page carries a visitor id.
 
 ## AiNote (Wave 4)
 
@@ -150,6 +201,8 @@ Unique on `(entryId, visitorId)`.
 | `expiresAt` | Date (TTL) |
 
 ### Limits
+
+Chain answers without a story are not rate limited, since the unique index caps them at one per entry.
 
 - 5 new entries / visitor / day
 - 10 chain stories / visitor / day

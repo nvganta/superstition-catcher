@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { startTestMongo, type TestMongo } from '@/test/mongoServer';
 import { migrateEntries } from '../../../scripts/migrate-entries';
 import type { Entry } from '@/lib/schema/entry';
+import { applyStatusEvent } from '@/lib/moderation/transitions';
 import { createEntryStore, type EntryStore } from './store';
 
 let mongo: TestMongo;
@@ -44,7 +45,6 @@ function editable(entry: Entry, overrides: Record<string, unknown> = {}) {
     confidence: entry.confidence,
     uncertaintyNote: entry.uncertaintyNote,
     postedBy: entry.postedBy,
-    status: entry.status,
     version: entry.version,
     ...overrides,
   };
@@ -161,11 +161,26 @@ describe('curated entry admin flow', () => {
     expect((await store.getLive(created.entry.id))?.version).toBe(1);
   });
 
-  it('takes an entry off the public site when its status is set to hidden', async () => {
+  it('leaves moderation status alone, so an edit cannot undo a takedown', async () => {
     const original = (await store.getLive('lemons-chillies-door'))!;
-    await store.update(original.id, editable(original, { status: 'hidden' }), now);
+    await applyStatusEvent(mongo.db, { targetType: 'entry', targetId: original.id }, 'hide', 'admin', now);
 
+    const result = await store.update(original.id, editable(original, { title: 'Edited while hidden', status: 'live' }), now);
+
+    expect(result.kind).toBe('saved');
     expect(await store.getLive(original.id)).toBeNull();
+    const stored = await mongo.db.collection('entries').findOne({ id: original.id });
+    expect(stored).toMatchObject({ title: 'Edited while hidden', status: 'hidden', version: 2 });
+  });
+
+  it('removes an optional field the admin cleared', async () => {
+    const original = (await store.getLive('lemons-chillies-door'))!;
+    const withNote = await store.update(original.id, editable(original, { uncertaintyNote: 'Dates are contested.' }), now);
+    if (withNote.kind !== 'saved') throw new Error('setup failed');
+
+    await store.update(original.id, editable(withNote.entry, { uncertaintyNote: '' }), now);
+
+    expect((await store.getLive(original.id))?.uncertaintyNote).toBeUndefined();
   });
 
   it('returns notFound for an unknown entry', async () => {

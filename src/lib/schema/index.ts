@@ -9,3 +9,4 @@ export * from './chainEntry';
 export * from './aiNote';
 export * from './visitor';
 export * from './rateLimit';
+export * from './statusTransition';

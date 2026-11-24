@@ -12,7 +12,7 @@ npm install
 npm run dev:local            # disposable MongoDB + next dev, nothing to configure
 ```
 
-`dev:local` boots `mongodb-memory-server`, runs the index, category and migration steps against it, and starts `next dev` with `MONGODB_URI` pointing at it. Extra arguments go to `next dev` (`npm run dev:local -- -p 3100`). The admin password is `local-admin` unless `ADMIN_PASSWORD` is already set. All data is discarded when the process exits.
+`dev:local` boots `mongodb-memory-server`, runs the category, entry migration, reaction migration and index steps against it, and starts `next dev` with `MONGODB_URI` pointing at it. Extra arguments go to `next dev` (`npm run dev:local -- -p 3100`). To serve an existing production build instead, run `npm run build` and then `npm run dev:local -- start -p 3100`. The admin password is `local-admin` unless `ADMIN_PASSWORD` is already set. All data is discarded when the process exits.
 
 To use your own local `mongod` instead, set the variables below and run `npm run dev`.
 
@@ -34,14 +34,18 @@ Scripts refuse URIs matching production patterns (Atlas hostnames, `production`,
 | `npm run seed:categories` | Upsert category taxonomy |
 | `npm run migrate-entries:dry-run` | Preview entry migration |
 | `npm run migrate-entries` | Insert missing entries + v1 versions (never overwrites an existing entry) |
+| `npm run migrate-reactions:dry-run` | Preview the emoji-to-rating reaction migration |
+| `npm run migrate-reactions` | Convert legacy reactions to ratings and archive the originals in `legacyReactions` (rerun-safe) |
 
 ## Preparing a database
 
 1. Start local MongoDB.
-2. `MONGODB_URI=mongodb://127.0.0.1:27017/superstition-buster-dev npm run ensure-indexes`
-3. `MONGODB_URI=... npm run seed:categories`
-4. `MONGODB_URI=... npm run migrate-entries:dry-run`
-5. `MONGODB_URI=... npm run migrate-entries`
+2. `MONGODB_URI=mongodb://127.0.0.1:27017/superstition-buster-dev npm run seed:categories`
+3. `MONGODB_URI=... npm run migrate-entries:dry-run`, then `npm run migrate-entries`
+4. `MONGODB_URI=... npm run migrate-reactions:dry-run`, then `npm run migrate-reactions`
+5. `MONGODB_URI=... npm run ensure-indexes`
+
+Reactions migrate before indexes because the unique reactions index cannot be built over legacy reaction documents.
 
 ## Testing
 

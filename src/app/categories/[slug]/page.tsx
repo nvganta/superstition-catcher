@@ -3,15 +3,18 @@ import { notFound } from 'next/navigation';
 import { getEntryStore } from '@/lib/entries/store';
 import { categoryEmoji, categoryLabelMap } from '@/lib/entries/labels';
 import EntryCard from '@/components/EntryCard';
+import { getReactionStore } from '@/lib/reactions/store';
+import { currentVisitorId } from '@/lib/visitorSession';
 
 export const dynamic = 'force-dynamic';
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const store = await getEntryStore();
+  const [store, reactions, visitorId] = await Promise.all([getEntryStore(), getReactionStore(), currentVisitorId()]);
+  const hidden = await reactions.hiddenEntryIds(visitorId);
   const [categories, entries] = await Promise.all([
     store.listCategories(),
-    store.listLive({ categorySlug: slug }),
+    store.listLive({ categorySlug: slug, excludeIds: hidden }),
   ]);
   const category = categories.find((candidate) => candidate.slug === slug);
   if (!category) {

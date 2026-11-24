@@ -7,6 +7,7 @@ const links = [
   { href: '/', label: 'Home', icon: '🏠' },
   { href: '/explore', label: 'Explore', icon: '🗺️' },
   { href: '/categories', label: 'Categories', icon: '📂' },
+  { href: '/saved', label: 'Saved', icon: '🔖' },
   { href: '/post', label: 'Post', icon: '✍️' },
 ];
 

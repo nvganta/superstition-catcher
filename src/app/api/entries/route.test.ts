@@ -1,21 +1,21 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { NextRequest } from 'next/server';
 import { startTestMongo, type TestMongo } from '@/test/mongoServer';
+import { VISITOR_COOKIE } from '@/lib/visitorCookie';
 import { GET, POST } from './route';
 
 let mongo: TestMongo;
 
-function postRequest(body: unknown) {
+function postRequest(body: unknown, visitorId: string = crypto.randomUUID()) {
   return new NextRequest('http://localhost/api/entries', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', cookie: `${VISITOR_COOKIE}=${visitorId}` },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   });
 }
 
 function entry(overrides: Record<string, unknown> = {}) {
   return {
-    visitorId: crypto.randomUUID(),
     title: 'Do not whistle at night',
     country: 'South Korea',
     region: 'china',
@@ -66,13 +66,26 @@ describe('POST /api/entries', () => {
 
   it('returns 429 with Retry-After when the visitor posts again too soon', async () => {
     const visitorId = crypto.randomUUID();
-    expect((await POST(postRequest(entry({ visitorId })))).status).toBe(201);
+    expect((await POST(postRequest(entry(), visitorId))).status).toBe(201);
 
-    const res = await POST(postRequest(entry({ visitorId, title: 'Another one' })));
+    const res = await POST(postRequest(entry({ title: 'Another one' }), visitorId));
 
     expect(res.status).toBe(429);
     expect(Number(res.headers.get('Retry-After'))).toBeGreaterThan(0);
     expect((await res.json()).message).toMatch(/wait/i);
+  });
+
+  it('takes the poster from the visitor cookie and ignores a visitorId in the body', async () => {
+    const visitorId = crypto.randomUUID();
+    const res = await POST(postRequest(entry({ visitorId: crypto.randomUUID() }), visitorId));
+    const { entry: created } = await res.json();
+
+    expect(await mongo.db.collection('entries').findOne({ id: created.id })).toMatchObject({ postedByVisitorId: visitorId });
+    expect(JSON.stringify(created)).not.toContain(visitorId);
+  });
+
+  it('returns 400 when the browser sent no usable visitor cookie', async () => {
+    expect((await POST(postRequest(entry({ visitorId: crypto.randomUUID() }), 'not-a-uuid'))).status).toBe(400);
   });
 
   it('returns 400 for a body that is not JSON', async () => {
