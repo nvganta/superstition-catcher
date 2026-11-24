@@ -31,6 +31,15 @@ Rules that matter more than style:
 - If the entry is a community post that may be inaccurate, do not treat its claims as established.
 - No headings, lists or markdown.`;
 
+/**
+ * Entry text can come from an anonymous community post, so it must not be able to close the
+ * <entry> tag and write outside it. Angle brackets become look-alike characters the model still
+ * reads as text.
+ */
+function asData(value: string): string {
+  return value.replace(/</g, '‹').replace(/>/g, '›');
+}
+
 function entryForPrompt(entry: PublicEntry): string {
   const fields: [string, string | undefined][] = [
     ['title', entry.title],
@@ -42,7 +51,7 @@ function entryForPrompt(entry: PublicEntry): string {
     ["what's changed since", entry.whatsChangedSince],
     ['a fresh look', entry.freshLook],
   ];
-  const lines = fields.flatMap(([label, value]) => (value ? [`${label}: ${value}`] : []));
+  const lines = fields.flatMap(([label, value]) => (value ? [`${label}: ${asData(value)}`] : []));
   return `<entry>\n${lines.join('\n')}\n</entry>`;
 }
 
